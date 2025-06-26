@@ -90,6 +90,39 @@ Validates k6 scripts by executing them with minimal configuration (1 VU, 1 itera
   - `error` (string): Error message if validation failed
   - `duration` (string): Time taken for validation
 
+## Available Resources
+
+### k6 Documentation Resources
+The MCP server provides access to the complete k6 documentation as resources. The documentation is sourced from the official k6-docs repository (https://github.com/grafana/k6-docs) and kept up-to-date via git submodule.
+
+**Resource URIs:**
+- Pattern: `k6-docs://{version}/{category}/{subcategory}/{document}.md`
+- Examples:
+  - `k6-docs://next/get-started/write-your-first-test.md`
+  - `k6-docs://next/javascript-api/k6-http/get.md`
+  - `k6-docs://next/examples/api-crud-operations.md`
+
+**Available Documentation Categories:**
+- **get-started/**: Getting started guides and tutorials
+- **javascript-api/**: Complete k6 JavaScript API reference
+- **examples/**: Practical examples and use cases
+- **testing-guides/**: Performance testing methodologies
+- **using-k6/**: k6 features and configuration
+- **using-k6-browser/**: Browser testing with k6
+- **release-notes/**: Version-specific release information
+
+**Resource Content Format:**
+Each resource returns structured markdown content including:
+- Document metadata (version, category, subcategory)
+- Frontmatter key-value pairs
+- Full markdown content with examples and explanations
+
+**Use Cases:**
+- AI agents can access up-to-date k6 documentation for script generation
+- Retrieve specific API documentation for k6 modules
+- Access examples and best practices for performance testing
+- Get the latest feature information and release notes
+
 ## Security Features
 
 The implementation includes comprehensive security measures:
@@ -103,12 +136,34 @@ The implementation includes comprehensive security measures:
 ## Project Structure
 
 ```
-├── main.go                    # MCP server entry point and tool registration
+├── main.go                    # MCP server entry point and tool/resource registration
+├── k6-docs/                   # Git submodule: Official k6 documentation repository
 ├── internal/
+│   ├── docs/                 # k6 documentation access functionality
+│   │   ├── handler.go        # MCP resource handlers for documentation
+│   │   ├── scanner.go        # Documentation file discovery and cataloging
+│   │   ├── parser.go         # Markdown parsing and content extraction
+│   │   └── errors.go         # Documentation-specific error types
 │   ├── validator/            # Core k6 validation logic
 │   │   └── validator.go      # Script validation, temp file handling, k6 execution
 │   └── security/             # Security utilities
 │       └── security.go       # Input validation, dangerous pattern detection
 ├── test_scripts/             # Test k6 scripts for validation
 └── .golangci.yml            # Comprehensive linting configuration
+```
+
+## Git Submodule Management
+
+The k6 documentation is included as a git submodule. To update the documentation:
+
+```bash
+# Initialize submodule on first clone
+git submodule update --init --recursive
+
+# Update documentation to latest version
+git submodule update --remote k6-docs
+
+# Commit the submodule update
+git add k6-docs
+git commit -m "docs: update k6 documentation to latest version"
 ```
