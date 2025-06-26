@@ -34,6 +34,9 @@ COPY --from=grafana/k6:latest /usr/bin/k6 /usr/bin/k6
 # Copy the binary from builder stage
 COPY --from=builder /build/k6-mcp /usr/local/bin/k6-mcp
 
+# Copy the k6 documentation
+COPY --from=builder /build/k6-docs /app/k6-docs
+
 # Use non-root user for security
 USER nonroot:nonroot
 

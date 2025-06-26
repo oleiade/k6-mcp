@@ -4,11 +4,13 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
 
+	"github.com/oleiade/k6-mcp/internal/docs"
 	"github.com/oleiade/k6-mcp/internal/validator"
 )
 
@@ -33,6 +35,15 @@ func main() {
 	)
 
 	s.AddTool(validateTool, handleValidate)
+
+	// Register documentation resources
+	docsPath := "k6-docs"
+	docsHandler := docs.NewHandler(docsPath)
+	
+	// Register each document as a separate resource
+	if err := registerDocumentationResources(s, docsHandler); err != nil {
+		log.Printf("Warning: failed to register documentation resources: %v", err)
+	}
 
 	if err := server.ServeStdio(s); err != nil {
 		log.Fatal(err)
@@ -75,4 +86,32 @@ func handleValidate(ctx context.Context, request mcp.CallToolRequest) (*mcp.Call
 
 	// For invalid scripts, still return the result
 	return mcp.NewToolResultText(string(resultJSON)), nil
+}
+
+// registerDocumentationResources registers all k6 documentation as individual MCP resources.
+func registerDocumentationResources(s *server.MCPServer, handler *docs.Handler) error {
+	ctx := context.Background()
+	listResult, err := handler.ListResources(ctx, mcp.ListResourcesRequest{})
+	if err != nil {
+		return fmt.Errorf("failed to list documentation resources: %w", err)
+	}
+
+	for _, resource := range listResult.Resources {
+		// Create resource handler for this specific resource
+		resourceHandler := func(uri string) func(context.Context, mcp.ReadResourceRequest) ([]mcp.ResourceContents, error) {
+			return func(ctx context.Context, request mcp.ReadResourceRequest) ([]mcp.ResourceContents, error) {
+				// Override the request URI to ensure we get the right document
+				request.Params.URI = uri
+				result, err := handler.ReadResource(ctx, request)
+				if err != nil {
+					return nil, fmt.Errorf("failed to read resource: %w", err)
+				}
+				return result.Contents, nil
+			}
+		}(resource.URI)
+
+		s.AddResource(resource, resourceHandler)
+	}
+
+	return nil
 }
