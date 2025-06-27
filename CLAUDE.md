@@ -90,6 +90,35 @@ Validates k6 scripts by executing them with minimal configuration (1 VU, 1 itera
   - `error` (string): Error message if validation failed
   - `duration` (string): Time taken for validation
 
+### run
+Executes k6 performance tests with configurable parameters for load testing scenarios.
+
+**Parameters:**
+- `script` (string, required): The k6 script content to run (JavaScript/TypeScript)
+- `vus` (number, optional): Number of virtual users (default: 1, max: 50)
+- `duration` (string, optional): Test duration (default: "30s", max: "5m")
+- `iterations` (number, optional): Number of iterations per VU (overrides duration)
+- `stages` (array, optional): Load profile stages for ramping (array of {duration, target})
+- `options` (object, optional): Additional k6 options as JSON object
+
+**Returns:**
+- JSON object with execution results including:
+  - `success` (bool): Whether the test completed successfully
+  - `exit_code` (int): k6 exit code
+  - `stdout` (string): Standard output from k6
+  - `stderr` (string): Standard error from k6
+  - `error` (string): Error message if execution failed
+  - `duration` (string): Total execution time
+  - `metrics` (object): Raw k6 metrics data
+  - `summary` (object): Parsed test summary with key performance metrics
+
+**Security Features:**
+- Inherits all validation security measures from the validate tool
+- Limited maximum VUs (50) and duration (5 minutes) to prevent resource abuse
+- Execution timeout protection (5 minutes)
+- Output sanitization to prevent information leakage
+- Secure temporary file handling with restricted permissions
+
 ## Available Resources
 
 ### k6 Documentation Resources
