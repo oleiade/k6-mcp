@@ -43,9 +43,9 @@ USER nonroot:nonroot
 # Set working directory
 WORKDIR /app
 
-# Health check
+# Health check - use exec form for distroless
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD ["/usr/local/bin/k6-mcp", "--help"] || exit 1
+    CMD ["/usr/local/bin/k6-mcp", "--help"]
 
 # Expose no ports as this is a stdio-based MCP server
 

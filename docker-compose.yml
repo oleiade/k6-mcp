@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   k6-mcp:
     build:
@@ -11,7 +9,7 @@ services:
     
     # Health check
     healthcheck:
-      test: ["/usr/local/bin/k6-mcp", "--help"]
+      test: ["CMD", "/usr/local/bin/k6-mcp", "--help"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -43,6 +41,102 @@ services:
       - "com.k6-mcp.version=1.0.0"
       - "maintainer=k6-mcp-team"
 
+  # Chroma vector database service
+  chroma:
+    image: chromadb/chroma
+    container_name: k6-mcp-chroma
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    
+    # Persistent volume for chroma data
+    volumes:
+      - chroma_data:/chroma/chroma
+    
+    # Health check
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/heartbeat"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    
+    # Security settings
+    security_opt:
+      - no-new-privileges:true
+    
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.2'
+          memory: 128M
+    
+    # Labels
+    labels:
+      - "com.k6-mcp.description=Chroma Vector Database"
+      - "com.k6-mcp.version=latest"
+      - "maintainer=k6-mcp-team"
+
+  # Python embedding API service
+  embed-api:
+    image: python:3.11-slim
+    container_name: k6-mcp-embed-api
+    restart: unless-stopped
+    ports:
+      - "5001:5001"
+    
+    # Mount the python services directory
+    volumes:
+      - ./python-services:/app
+      - embed_cache:/root/.cache
+    
+    working_dir: /app
+    
+    # Install dependencies and run the service
+    command: >
+      sh -c "
+        pip install poetry &&
+        poetry config virtualenvs.create false &&
+        poetry install --no-dev &&
+        python embed_api.py
+      "
+    
+    # Health check
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5001/embed", "-X", "POST", "-H", "Content-Type: application/json", "-d", "{\"text\":\"test\"}"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    
+    # Security settings
+    security_opt:
+      - no-new-privileges:true
+    
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.2'
+          memory: 256M
+    
+    # Environment variables
+    environment:
+      - PYTHONUNBUFFERED=1
+    
+    # Labels
+    labels:
+      - "com.k6-mcp.description=Python Embedding API Service"
+      - "com.k6-mcp.version=latest"
+      - "maintainer=k6-mcp-team"
+
   # Example service showing how to use k6-mcp in a stack
   # Uncomment and modify as needed
   #
@@ -51,5 +145,18 @@ services:
   #   depends_on:
   #     k6-mcp:
   #       condition: service_healthy
+  #     chroma:
+  #       condition: service_healthy
+  #     embed-api:
+  #       condition: service_healthy
   #   environment:
   #     - MCP_SERVER_COMMAND=docker exec k6-mcp-server /usr/local/bin/k6-mcp
+  #     - CHROMA_URL=http://chroma:8000
+  #     - EMBED_API_URL=http://embed-api:5001
+
+# Persistent volumes
+volumes:
+  chroma_data:
+    driver: local
+  embed_cache:
+    driver: local
