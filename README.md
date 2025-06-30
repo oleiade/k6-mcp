@@ -10,38 +10,6 @@ An experimental MCP (Model Context Protocol) server for k6, built in Go. This se
 
 ## Quick Start
 
-### Using Docker (Recommended)
-
-1. **Pull the pre-built image** (when available):
-   ```bash
-   docker pull k6-mcp:latest
-   ```
-
-2. **Or build locally**:
-   ```bash
-   git clone <repository-url>
-   cd k6-mcp
-   docker build -t k6-mcp:latest .
-   ```
-
-3. **Test the server**:
-   ```bash
-   echo '{"script": "export default function() { console.log(\"Hello k6!\"); }"}' | \
-     docker run --rm -i k6-mcp:latest
-   ```
-
-### Using Go directly
-
-1. **Install dependencies**:
-   ```bash
-   go mod tidy
-   ```
-
-2. **Run the server**:
-   ```bash
-   go run main.go
-   ```
-
 ## Editor Integration
 
 ### Cursor IDE
@@ -82,6 +50,19 @@ To use this MCP server with Cursor IDE:
 ### Other MCP-Compatible Editors
 
 The same Docker configuration can be adapted for other MCP-compatible editors like Claude Desktop or other tools that support MCP. Adjust the configuration file path and format according to your editor's requirements.
+
+
+### Using Go directly
+
+1. **Install dependencies**:
+   ```bash
+   go mod tidy
+   ```
+
+2. **Run the server**:
+   ```bash
+   go run main.go
+   ```
 
 ## Available Tools
 
