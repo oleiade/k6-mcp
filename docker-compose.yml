@@ -1,45 +1,45 @@
 services:
-  k6-mcp:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: k6-mcp:latest
-    container_name: k6-mcp-server
-    restart: unless-stopped
+  # k6-mcp:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile
+  #   image: k6-mcp:latest
+  #   container_name: k6-mcp-server
+  #   restart: unless-stopped
     
-    # Health check
-    healthcheck:
-      test: ["CMD", "/usr/local/bin/k6-mcp", "--help"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
+  #   # Health check
+  #   healthcheck:
+  #     test: ["CMD", "/usr/local/bin/k6-mcp", "--help"]
+  #     interval: 30s
+  #     timeout: 10s
+  #     retries: 3
+  #     start_period: 40s
     
-    # Security settings
-    security_opt:
-      - no-new-privileges:true
-    read_only: true
-    user: "65532:65532"  # nonroot user from distroless
+  #   # Security settings
+  #   security_opt:
+  #     - no-new-privileges:true
+  #   read_only: true
+  #   user: "65532:65532"  # nonroot user from distroless
     
-    # Resource limits
-    deploy:
-      resources:
-        limits:
-          cpus: '0.5'
-          memory: 128M
-        reservations:
-          cpus: '0.1'
-          memory: 32M
+  #   # Resource limits
+  #   deploy:
+  #     resources:
+  #       limits:
+  #         cpus: '0.5'
+  #         memory: 128M
+  #       reservations:
+  #         cpus: '0.1'
+  #         memory: 32M
     
-    # Temporary filesystem for any temp files
-    tmpfs:
-      - /tmp:noexec,nosuid,size=50m
+  #   # Temporary filesystem for any temp files
+  #   tmpfs:
+  #     - /tmp:noexec,nosuid,size=50m
     
-    # Labels
-    labels:
-      - "com.k6-mcp.description=k6 MCP Server"
-      - "com.k6-mcp.version=1.0.0"
-      - "maintainer=k6-mcp-team"
+  #   # Labels
+  #   labels:
+  #     - "com.k6-mcp.description=k6 MCP Server"
+  #     - "com.k6-mcp.version=1.0.0"
+  #     - "maintainer=k6-mcp-team"
 
   # Chroma vector database service
   chroma:
