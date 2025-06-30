@@ -11,6 +11,7 @@ def verify_chromadb():
     
     # Connect to ChromaDB
     chroma_client = chromadb.HttpClient(host="localhost", port=8000)
+    print(f"✅ Successfully connected to ChromaDB at localhost:8000")
     
     # List all collections
     collections = chroma_client.list_collections()
