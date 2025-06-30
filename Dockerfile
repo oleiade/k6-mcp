@@ -3,8 +3,13 @@
 # Build stage
 FROM golang:1.24-alpine AS builder
 
-# Install k6 build dependencies
-RUN apk add --no-cache git ca-certificates
+# Install build dependencies including those needed for CGO and ChromaDB client
+RUN apk add --no-cache \
+    git \
+    ca-certificates \
+    build-base \
+    gcc \
+    musl-dev
 
 # Set working directory
 WORKDIR /build
@@ -18,15 +23,17 @@ RUN go mod download && go mod verify
 # Copy source code
 COPY . .
 
-# Build the application with optimizations
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
-    -ldflags='-w -s -extldflags "-static"' \
-    -a -installsuffix cgo \
+# Build the application with CGO enabled for ChromaDB dependencies
+RUN CGO_ENABLED=1 go build \
+    -ldflags='-w -s' \
     -o k6-mcp \
     ./main.go
 
-# Final stage - distroless for minimal size
-FROM gcr.io/distroless/static:nonroot
+# Final stage - use alpine for runtime dependencies
+FROM alpine:latest
+
+# Install runtime dependencies for CGO binaries
+RUN apk add --no-cache ca-certificates
 
 # Install k6 binary
 COPY --from=grafana/k6:latest /usr/bin/k6 /usr/bin/k6
@@ -36,6 +43,21 @@ COPY --from=builder /build/k6-mcp /usr/local/bin/k6-mcp
 
 # Copy the k6 documentation
 COPY --from=builder /build/k6-docs /app/k6-docs
+
+# Make binary executable
+RUN chmod +x /usr/local/bin/k6-mcp
+
+# Create non-root user and writable cache directory
+RUN addgroup -g 65532 nonroot && \
+    adduser -D -u 65532 -G nonroot nonroot && \
+    mkdir -p /app/cache && \
+    chown -R nonroot:nonroot /app/cache
+
+# Set environment variables for cache directories
+ENV HF_HOME=/app/cache/huggingface \
+    TRANSFORMERS_CACHE=/app/cache/transformers \
+    HF_DATASETS_CACHE=/app/cache/datasets \
+    TOKENIZERS_CACHE=/app/cache/tokenizers
 
 # Use non-root user for security
 USER nonroot:nonroot
