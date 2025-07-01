@@ -39,7 +39,7 @@ To use this MCP server with Cursor IDE:
 1. **Install the k6-mcp server**:
 
    ```bash
-   go install github.com/oleiade/k6-mcp@latest
+   go install github.com/oleiade/k6-mcp@main
    ```
 
 
@@ -61,22 +61,6 @@ To use this MCP server with Cursor IDE:
 
 4. **Use the k6 validation tool** in your Cursor chat by asking it to validate k6 scripts.
 
-### Other MCP-Compatible Editors
-
-The same Docker configuration can be adapted for other MCP-compatible editors like Claude Desktop or other tools that support MCP. Adjust the configuration file path and format according to your editor's requirements.
-
-
-### Using Go directly
-
-1. **Install dependencies**:
-   ```bash
-   go mod tidy
-   ```
-
-2. **Run the server**:
-   ```bash
-   go run main.go
-   ```
 
 ## Available Tools
 
