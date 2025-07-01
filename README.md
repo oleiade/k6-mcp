@@ -10,16 +10,38 @@ An experimental MCP (Model Context Protocol) server for k6, built in Go. This se
 
 ## Quick Start
 
-## Editor Integration
+### Prerequisites ‼️
+
+We recommend installing the `just` command to benefit from our `just` commands:
+```bash
+brew install just
+```
+
+With `just` installed, we can now run Chroma DB in the background, and ingest the k6 documentation into it to support the k6-mcp server's search feature.
+
+```bash
+# Run the vector database in the background
+just chroma
+
+# Ensure the k6-docs submodule is initialized and pulled
+just initialize
+
+# Ingest the k6 documentation into the vector database
+just ingest
+```
+
+### Editor Integration
 
 ### Cursor IDE
 
 To use this MCP server with Cursor IDE:
 
-1. **Ensure Docker image is available**:
+1. **Install the k6-mcp server**:
+
    ```bash
-   docker build -t k6-mcp:latest .
+   go install github.com/oleiade/k6-mcp@latest
    ```
+
 
 2. **Configure MCP settings**:
    Create or update your MCP configuration file (`~/.cursor/mcp_servers.json` or your editor's MCP config):
@@ -28,15 +50,7 @@ To use this MCP server with Cursor IDE:
    {
      "mcpServers": {
        "k6-mcp": {
-         "command": "docker",
-         "args": [
-           "run", "--rm", "-i",
-           "--security-opt", "no-new-privileges:true",
-           "--read-only",
-           "--tmpfs", "/tmp:noexec,nosuid,size=50m",
-           "--user", "65532:65532",
-           "k6-mcp:latest"
-         ],
+         "command": "k6-mcp",
          "env": {}
        }
      }
@@ -68,7 +82,7 @@ The same Docker configuration can be adapted for other MCP-compatible editors li
 
 ### validate
 
-Validates k6 scripts by executing them with minimal configuration.
+Validates k6 scripts by executing them with minimal configuration (1 VU, 1 iteration).
 
 **Parameters:**
 - `script` (string, required): The k6 script content to validate (JavaScript/TypeScript)
@@ -80,6 +94,53 @@ Validates k6 scripts by executing them with minimal configuration.
 - `stderr` (string): Standard error from k6  
 - `error` (string): Error message if validation failed
 - `duration` (string): Time taken for validation
+
+### run
+
+Runs k6 performance tests with configurable parameters.
+
+**Parameters:**
+- `script` (string, required): The k6 script content to run (JavaScript/TypeScript)
+- `vus` (number, optional): Number of virtual users (default: 1, max: 50)
+- `duration` (string, optional): Test duration (default: '30s', max: '5m')
+- `iterations` (number, optional): Number of iterations per VU (overrides duration)
+- `stages` (object, optional): Load profile stages for ramping (array of {duration, target})
+- `options` (object, optional): Additional k6 options as JSON object
+
+**Returns:**
+- `success` (boolean): Whether the test completed successfully
+- `exit_code` (integer): k6 exit code
+- `stdout` (string): Standard output from k6
+- `stderr` (string): Standard error from k6
+- `error` (string): Error message if test failed
+- `duration` (string): Time taken for test execution
+- `metrics` (object): Raw k6 metrics data
+- `summary` (object): Test summary with key performance metrics:
+  - `total_requests` (integer): Total HTTP requests made
+  - `failed_requests` (integer): Number of failed requests
+  - `avg_response_time_ms` (number): Average response time in milliseconds
+  - `p95_response_time_ms` (number): 95th percentile response time in milliseconds
+  - `request_rate_per_second` (number): Request rate per second
+  - `data_received` (string): Amount of data received
+  - `data_sent` (string): Amount of data sent
+
+### search
+
+Searches k6 documentation using semantic similarity.
+
+**Parameters:**
+- `query` (string, required): The search query to find relevant k6 documentation
+- `max_results` (number, optional): Maximum number of results to return (default: 5, max: 20)
+
+**Returns:**
+- `query` (string): The original search query
+- `results` (array): Array of search results, each containing:
+  - `content` (string): Documentation content
+  - `metadata` (object): Document metadata
+  - `score` (number): Similarity score (0-1, higher is more relevant)
+  - `source` (string): Source identifier
+- `count` (integer): Number of results returned
+
 
 ## Development
 
