@@ -32,4 +32,4 @@ go.work.sum
 # .vscode/
 
 # Build artifacts
-k6-mcp
+./k6-mcp
