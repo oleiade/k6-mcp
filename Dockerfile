@@ -27,7 +27,7 @@ COPY . .
 RUN CGO_ENABLED=1 go build \
     -ldflags='-w -s' \
     -o k6-mcp \
-    ./main.go
+    ./cmd/k6-mcp/main.go
 
 # Final stage - use alpine for runtime dependencies
 FROM alpine:latest

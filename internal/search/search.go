@@ -7,7 +7,6 @@ import (
 	"os"
 
 	chroma "github.com/amikos-tech/chroma-go/pkg/api/v2"
-	"github.com/amikos-tech/chroma-go/pkg/embeddings"
 	defaultef "github.com/amikos-tech/chroma-go/pkg/embeddings/default_ef"
 )
 
@@ -120,16 +119,14 @@ func (c *Client) initializeChromaClient(ctx context.Context) error {
 
 	c.chromaClient = client
 
-	// Create embedding function - try default first, fall back to hash-based
-	var ef embeddings.EmbeddingFunction
-
-	// Try default ONNX-based embedding function first
-	ef, _, err = defaultef.NewDefaultEmbeddingFunction()
+	// Create default embedding function (all-MiniLM-L6-v2)
+	// This must work - no fallbacks
+	ef, _, err := defaultef.NewDefaultEmbeddingFunction()
 	if err != nil {
-		return fmt.Errorf("search failed to initialize embedding function; reason: %w", err)
+		return fmt.Errorf("failed to initialize default embedding function: %w", err)
 	}
 
-	// Get the collection with embedding function
+	// Get the collection with our embedding function
 	collection, err := client.GetCollection(ctx, c.options.CollectionName, chroma.WithEmbeddingFunctionGet(ef))
 	if err != nil {
 		return fmt.Errorf("failed to get collection '%s': %w", c.options.CollectionName, err)

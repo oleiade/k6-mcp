@@ -13,6 +13,6 @@ require (
 	github.com/oklog/ulid v1.3.1 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/spf13/cast v1.7.1 // indirect
-	github.com/yalue/onnxruntime_go v1.20.0 // indirect
+	github.com/yalue/onnxruntime_go v1.19.0 // indirect
 	github.com/yosida95/uritemplate/v3 v3.0.2 // indirect
 )

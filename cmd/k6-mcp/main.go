@@ -11,6 +11,7 @@ import (
 	"github.com/mark3labs/mcp-go/server"
 
 	"github.com/oleiade/k6-mcp/internal/runner"
+	"github.com/oleiade/k6-mcp/internal/search"
 	"github.com/oleiade/k6-mcp/internal/validator"
 )
 
@@ -68,6 +69,23 @@ func main() {
 	)
 
 	s.AddTool(runTool, handleRun)
+
+	// Register the search tool
+	searchTool := mcp.NewTool(
+		"search",
+		mcp.WithDescription("Search the k6 documentation for relevant information based on a query"),
+		mcp.WithString(
+			"query",
+			mcp.Required(),
+			mcp.Description("The search query to find relevant k6 documentation (e.g., 'How can I generate a constant rate of http requests with k6')"),
+		),
+		mcp.WithNumber(
+			"max_results",
+			mcp.Description("Maximum number of results to return (default: 5, max: 20)"),
+		),
+	)
+
+	s.AddTool(searchTool, handleSearch)
 
 	if err := server.ServeStdio(s); err != nil {
 		log.Fatal(err)
@@ -211,4 +229,72 @@ func parseRunOptions(args map[string]interface{}) (*runner.RunOptions, error) {
 	}
 
 	return options, nil
+}
+
+// handleSearch handles the search tool requests.
+func handleSearch(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	args := request.GetArguments()
+
+	// Extract query from arguments
+	queryValue, exists := args["query"]
+	if !exists {
+		return mcp.NewToolResultError("missing required parameter: query"), nil
+	}
+
+	query, ok := queryValue.(string)
+	if !ok {
+		return mcp.NewToolResultError("query parameter must be a string"), nil
+	}
+
+	if query == "" {
+		return mcp.NewToolResultError("query parameter cannot be empty"), nil
+	}
+
+	// Parse search options
+	options := search.DefaultOptions()
+
+	// Parse max_results if provided
+	if maxResultsValue, exists := args["max_results"]; exists {
+		if maxResults, ok := maxResultsValue.(float64); ok {
+			maxResultsInt := int(maxResults)
+			// Enforce reasonable limits
+			if maxResultsInt <= 0 {
+				maxResultsInt = 5
+			} else if maxResultsInt > 20 {
+				maxResultsInt = 20
+			}
+			options.MaxResults = maxResultsInt
+		} else {
+			return mcp.NewToolResultError("max_results must be a number"), nil
+		}
+	}
+
+	// Create search client and perform search
+	client := search.NewClientWithOptions(options)
+	defer client.Close()
+
+	results, err := client.Search(ctx, query)
+	if err != nil {
+		log.Printf("Search error: %v", err)
+		return mcp.NewToolResultError(fmt.Sprintf("search failed: %v", err)), nil
+	}
+
+	// Create response structure
+	response := struct {
+		Query       string          `json:"query"`
+		Results     []search.Result `json:"results"`
+		ResultCount int             `json:"result_count"`
+	}{
+		Query:       query,
+		Results:     results,
+		ResultCount: len(results),
+	}
+
+	// Convert result to JSON for structured response
+	resultJSON, err := json.MarshalIndent(response, "", "  ")
+	if err != nil {
+		return mcp.NewToolResultError("failed to serialize search results"), err
+	}
+
+	return mcp.NewToolResultText(string(resultJSON)), nil
 }
