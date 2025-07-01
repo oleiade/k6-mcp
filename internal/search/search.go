@@ -64,14 +64,14 @@ func isRunningInDockerCompose() bool {
 	if !isRunningInDocker() {
 		return false
 	}
-	
+
 	// Check if we can resolve the chroma hostname (indicates we're in compose network)
 	// This is a simple way to detect if we're in the compose network vs host network
 	if hostname := os.Getenv("HOSTNAME"); hostname != "" {
 		// In compose, containers typically have meaningful hostnames
 		return true
 	}
-	
+
 	return false
 }
 
@@ -122,12 +122,11 @@ func (c *Client) initializeChromaClient(ctx context.Context) error {
 
 	// Create embedding function - try default first, fall back to hash-based
 	var ef embeddings.EmbeddingFunction
-	
+
 	// Try default ONNX-based embedding function first
 	ef, _, err = defaultef.NewDefaultEmbeddingFunction()
 	if err != nil {
-		// Fall back to consistent hash embedding function if default fails (e.g., on ARM64)
-		ef = embeddings.NewConsistentHashEmbeddingFunction()
+		return fmt.Errorf("search failed to initialize embedding function; reason: %w", err)
 	}
 
 	// Get the collection with embedding function
