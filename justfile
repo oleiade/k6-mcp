@@ -8,7 +8,11 @@ run:
 
 # Run chroma vector database in the background
 chroma:
-    docker-compose up -d chroma
+    docker compose -f docker-compose.chroma.yml up -d
+
+# Run milvus vector database in the background
+milvus:
+    docker compose -f docker-compose.milvus.yml up -d
 
 # Ingest the k6 documentation into the chroma vector database
 ingest:
