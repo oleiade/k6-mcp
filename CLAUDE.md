@@ -4,29 +4,54 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is an experimental MCP (Model Context Protocol) server for k6, built in Go. The project uses the `mcp-go` library to create an MCP server that communicates via stdio.
+This is an experimental MCP (Model Context Protocol) server for k6, built in Go. The project uses the `mcp-go` library to create an MCP server that communicates via stdio and provides k6 script validation, execution, and documentation search capabilities.
 
 ## Architecture
 
-- **main.go**: Entry point that creates and serves an MCP server with resource capabilities, logging, and recovery middleware
-- **go.mod**: Defines the module as `github.com/oleiade/k6-mcp` using Go 1.24.4
+- **cmd/k6-mcp/main.go**: Entry point that creates and serves an MCP server with three main tools: validate, run, and search
+- **internal/validator/**: Core k6 script validation logic with security measures
+- **internal/runner/**: k6 test execution with configurable parameters and result parsing
+- **internal/search/**: Semantic search functionality using Chroma vector database
+- **internal/security/**: Security utilities for input validation and dangerous pattern detection
+- **k6-docs/**: Git submodule containing official k6 documentation for search indexing
 - Uses `github.com/mark3labs/mcp-go` v0.32.0 as the core MCP library
+- Uses `github.com/amikos-tech/chroma-go` for vector database interactions
 
 ## Common Commands
 
 ### Development
 ```bash
 # Run the MCP server
-go run main.go
+go run ./cmd/k6-mcp
 
 # Build the project
-go build
+go build -o k6-mcp ./cmd/k6-mcp
 
 # Install dependencies
 go mod tidy
 
 # Update dependencies
 go get -u ./...
+```
+
+### Just Commands (Recommended)
+The project uses `just` for common tasks. Install with `brew install just`:
+
+```bash
+# Initialize git submodules (k6-docs)
+just initialize
+
+# Run the MCP server
+just run
+
+# Start Chroma vector database for search functionality
+just chroma
+
+# Ingest k6 documentation into vector database
+just ingest
+
+# Verify vector database ingestion
+just verify
 ```
 
 ### Testing
@@ -62,6 +87,13 @@ golangci-lint run --enable-only=gofmt,goimports
 - Documentation standards for exported functions
 
 Always run `golangci-lint run` before committing changes. The configuration is optimized for Go 1.24+ and includes 40+ linters covering style, bugs, performance, and security.
+
+## Coding Practices and Memories
+
+### Development Guidelines
+- Always verify that Go code you write passes the golangci lint run against the .golangci.yml configuration
+- Always assume we use poetry when interacting with Python
+- Always prioritize idiomatic, modern, best practices when writing code
 
 ## MCP Server Configuration
 
@@ -112,27 +144,48 @@ Executes k6 performance tests with configurable parameters for load testing scen
   - `metrics` (object): Raw k6 metrics data
   - `summary` (object): Parsed test summary with key performance metrics
 
+### search
+Searches k6 documentation using semantic similarity via Chroma vector database.
+
+**Parameters:**
+- `query` (string, required): The search query to find relevant k6 documentation
+- `max_results` (number, optional): Maximum number of results to return (default: 5, max: 20)
+
+**Returns:**
+- JSON object with search results including:
+  - `query` (string): The original search query
+  - `results` (array): Array of search results with content, metadata, and similarity scores
+  - `result_count` (int): Number of results returned
+
+**Prerequisites:**
+- Chroma vector database must be running (`just chroma`)
+- k6 documentation must be ingested (`just ingest`)
+
 **Security Features:**
-- Inherits all validation security measures from the validate tool
+- Input validation and size limits
+- Secure temporary file handling with restricted permissions (0600)
+- Command execution timeouts (30s for validation, 5m for runs)
+- Dangerous pattern detection (blocks Node.js modules, system access)
 - Limited maximum VUs (50) and duration (5 minutes) to prevent resource abuse
-- Execution timeout protection (5 minutes)
-- Output sanitization to prevent information leakage
-- Secure temporary file handling with restricted permissions
 
-## Available Resources
+## Documentation Access
 
-### k6 Documentation Resources
-The MCP server provides access to the complete k6 documentation as resources. The documentation is sourced from the official k6-docs repository (https://github.com/grafana/k6-docs) and kept up-to-date via git submodule.
+The project provides k6 documentation access through two mechanisms:
 
-**Resource URIs:**
-- Pattern: `k6-docs://{version}/{category}/{subcategory}/{document}.md`
-- Examples:
-  - `k6-docs://next/get-started/write-your-first-test.md`
-  - `k6-docs://next/javascript-api/k6-http/get.md`
-  - `k6-docs://next/examples/api-crud-operations.md`
+### 1. Search Tool (Recommended)
+Uses semantic search via Chroma vector database for intelligent documentation retrieval:
+- Semantic similarity matching for natural language queries
+- Returns relevant documentation snippets with context
+- Requires Chroma database setup (`just chroma` and `just ingest`)
+
+### 2. Direct File Access
+The k6-docs git submodule contains the complete official k6 documentation:
+- Located in `k6-docs/` directory
+- Structured markdown files organized by category
+- Updated via `git submodule update --remote k6-docs`
 
 **Available Documentation Categories:**
-- **get-started/**: Getting started guides and tutorials
+- **get-started/**: Getting started guides and tutorials  
 - **javascript-api/**: Complete k6 JavaScript API reference
 - **examples/**: Practical examples and use cases
 - **testing-guides/**: Performance testing methodologies
@@ -140,45 +193,50 @@ The MCP server provides access to the complete k6 documentation as resources. Th
 - **using-k6-browser/**: Browser testing with k6
 - **release-notes/**: Version-specific release information
 
-**Resource Content Format:**
-Each resource returns structured markdown content including:
-- Document metadata (version, category, subcategory)
-- Frontmatter key-value pairs
-- Full markdown content with examples and explanations
-
-**Use Cases:**
-- AI agents can access up-to-date k6 documentation for script generation
-- Retrieve specific API documentation for k6 modules
-- Access examples and best practices for performance testing
-- Get the latest feature information and release notes
-
-## Security Features
-
-The implementation includes comprehensive security measures:
-- Input size limits (1MB max)
-- Dangerous pattern detection (blocks Node.js modules, system access)
-- Secure temporary file handling with restricted permissions (0600)
-- Command execution timeouts (30s default)
-- Minimal environment for k6 execution
-- Proper cleanup of temporary files
-
 ## Project Structure
 
 ```
-├── main.go                    # MCP server entry point and tool/resource registration
-├── k6-docs/                   # Git submodule: Official k6 documentation repository
+├── cmd/k6-mcp/
+│   └── main.go               # MCP server entry point and tool registration
 ├── internal/
-│   ├── docs/                 # k6 documentation access functionality
-│   │   ├── handler.go        # MCP resource handlers for documentation
-│   │   ├── scanner.go        # Documentation file discovery and cataloging
-│   │   ├── parser.go         # Markdown parsing and content extraction
-│   │   └── errors.go         # Documentation-specific error types
-│   ├── validator/            # Core k6 validation logic
-│   │   └── validator.go      # Script validation, temp file handling, k6 execution
-│   └── security/             # Security utilities
-│       └── security.go       # Input validation, dangerous pattern detection
-├── test_scripts/             # Test k6 scripts for validation
+│   ├── runner/               # k6 test execution with configurable parameters
+│   │   └── runner.go         # Test execution, result parsing, timeout handling
+│   ├── search/               # Semantic search functionality
+│   │   └── search.go         # Chroma vector database integration
+│   ├── security/             # Security utilities and input validation
+│   │   └── security.go       # Dangerous pattern detection, input sanitization
+│   └── validator/            # Core k6 script validation logic
+│       └── validator.go      # Script validation, temp file handling, k6 execution
+├── k6-docs/                  # Git submodule: Official k6 documentation repository
+├── python-services/          # Python services for documentation ingestion
+├── volumes/                  # Docker volume mounts for databases
+├── justfile                  # Task runner with common development commands
+├── docker-compose.chroma.yml # Chroma vector database configuration
+├── docker-compose.milvus.yml # Milvus vector database configuration
 └── .golangci.yml            # Comprehensive linting configuration
+```
+
+## Development Setup
+
+### Prerequisites
+1. **Go 1.24.4+**: For building and running the MCP server
+2. **Docker**: For running vector databases (Chroma/Milvus)
+3. **Just**: Command runner for development tasks (`brew install just`)
+4. **k6**: Must be installed and available in PATH for script execution
+
+### Initial Setup
+```bash
+# Clone with submodules
+git clone --recursive https://github.com/oleiade/k6-mcp
+
+# Or initialize submodules after cloning
+just initialize
+
+# Start vector database
+just chroma
+
+# Ingest documentation (requires Python services)
+just ingest
 ```
 
 ## Git Submodule Management
