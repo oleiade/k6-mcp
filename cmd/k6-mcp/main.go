@@ -15,6 +15,10 @@ import (
 	"github.com/oleiade/k6-mcp/internal/validator"
 )
 
+const (
+	maxResultsLimit = 20
+)
+
 func main() {
 	s := server.NewMCPServer(
 		"k6",
@@ -77,7 +81,7 @@ func main() {
 		mcp.WithString(
 			"query",
 			mcp.Required(),
-			mcp.Description("The search query to find relevant k6 documentation (e.g., 'How can I generate a constant rate of http requests with k6')"),
+			mcp.Description("The search query to find relevant k6 documentation"),
 		),
 		mcp.WithNumber(
 			"max_results",
@@ -260,8 +264,8 @@ func handleSearch(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallTo
 			// Enforce reasonable limits
 			if maxResultsInt <= 0 {
 				maxResultsInt = 5
-			} else if maxResultsInt > 20 {
-				maxResultsInt = 20
+			} else if maxResultsInt > maxResultsLimit {
+				maxResultsInt = maxResultsLimit
 			}
 			options.MaxResults = maxResultsInt
 		} else {
@@ -270,8 +274,16 @@ func handleSearch(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallTo
 	}
 
 	// Create search client and perform search
-	client := search.NewClientWithOptions(options)
-	defer client.Close()
+	client, err := search.NewSearch(search.BackendChroma, options)
+	if err != nil {
+		log.Printf("Failed to create search client: %v", err)
+		return mcp.NewToolResultError(fmt.Sprintf("failed to create search client: %v", err)), nil
+	}
+	defer func() {
+		if closeErr := client.Close(); closeErr != nil {
+			log.Printf("Failed to close search client: %v", closeErr)
+		}
+	}()
 
 	results, err := client.Search(ctx, query)
 	if err != nil {
