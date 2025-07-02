@@ -1,5 +1,5 @@
 # Initialize the repository's submodules
-initialize: chrome ingest verify
+initialize: chroma ingest verify
 
 # Run the k6-mcp server
 run:
@@ -20,3 +20,8 @@ ingest:
 # Verify that the chroma vector database ingestion was successful
 verify:
     cd python-services && poetry run python verify_chroma.py
+
+# Reset the chroma vector database
+reset:
+    docker compose -f docker-compose.chroma.yml down
+    docker volume rm k6-mcp_chroma_data
