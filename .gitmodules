@@ -1,3 +1,0 @@
-[submodule "k6-docs"]
-	path = k6-docs
-	url = https://github.com/grafana/k6-docs
