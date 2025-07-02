@@ -1,3 +1,17 @@
+#!/usr/bin/env -S uv run --script
+# /// script
+# dependencies = [
+#     "chromadb>=1.0.13",
+#     "python-frontmatter>=1.1.0",
+#     "langchain>=0.3.26",
+#     "langchain-community>=0.3.26",
+#     "langchain-huggingface>=0.3.0",
+#     "gitpython>=3.1.40",
+#     "unstructured>=0.18.1",
+#     "sentence-transformers>=4.1.0"
+# ]
+# ///
+
 import os
 import tempfile
 import shutil

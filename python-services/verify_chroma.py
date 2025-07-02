@@ -1,3 +1,13 @@
+#!/usr/bin/env -S uv run --script
+# /// script
+# dependencies = [
+#     "chromadb>=1.0.13",
+#     "langchain-community>=0.3.26",
+#     "langchain-huggingface>=0.3.0",
+#     "sentence-transformers>=4.1.0"
+# ]
+# ///
+
 import os
 import chromadb
 from langchain_community.vectorstores import Chroma

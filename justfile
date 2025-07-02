@@ -15,11 +15,11 @@ milvus:
 
 # Ingest the k6 documentation into the chroma vector database
 ingest:
-    cd python-services && poetry install && poetry run python ingest.py
+    cd python-services && ./ingest.py
 
 # Verify that the chroma vector database ingestion was successful
 verify:
-    cd python-services && poetry install && poetry run python verify_chroma.py
+    cd python-services && ./verify_chroma.py
 
 # Reset the chroma vector database
 reset:
