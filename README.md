@@ -33,7 +33,7 @@ To use this MCP server with Cursor IDE:
 1. **Install the k6-mcp server**:
 
    ```bash
-   go install github.com/oleiade/k6-mcp@main
+   go install github.com/oleiade/k6-mcp/cmd/k6-mcp@main
    ```
 
 
