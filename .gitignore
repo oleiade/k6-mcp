@@ -36,3 +36,6 @@ go.work.sum
 
 # Ignore milvus docker volume data
 volumes/
+
+# Python files
+*.pyc
