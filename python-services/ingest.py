@@ -13,32 +13,64 @@
 # ///
 
 import os
+import re
 import tempfile
 import shutil
-import re
+import atexit
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
-from git import Repo
-from langchain_community.document_loaders import DirectoryLoader, UnstructuredMarkdownLoader
+from typing import Dict
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import Chroma
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain.schema import Document
 import chromadb
 import frontmatter
+import git
 
 # Disable ChromaDB telemetry to avoid telemetry errors
 os.environ["ANONYMIZED_TELEMETRY"] = "False"
 
+# Global variable to track temp directory for cleanup
+temp_dir = None
+
+def cleanup_temp_dir():
+    """Clean up the temporary directory."""
+    global temp_dir
+    if temp_dir and os.path.exists(temp_dir):
+        print(f"Cleaning up temporary directory: {temp_dir}")
+        shutil.rmtree(temp_dir)
+
+# Register cleanup function to run on exit
+atexit.register(cleanup_temp_dir)
+
 def get_k6_docs_path() -> str:
-    """Get the path to the k6-docs directory."""
-    docs_path = os.path.expanduser("~/Dev/grafana/k6-docs/docs/sources")
+    """Clone k6-docs repository to a temporary directory and return the docs path."""
+    global temp_dir
     
-    if not os.path.exists(docs_path):
-        raise FileNotFoundError(f"Documentation sources not found at {docs_path}")
-    
-    print(f"Using k6-docs at {docs_path}")
-    return docs_path
+    try:
+        # Create temporary directory
+        temp_dir = tempfile.mkdtemp(prefix="k6-docs-")
+        print(f"Created temporary directory: {temp_dir}")
+        
+        # Clone the repository
+        repo_url = "https://github.com/grafana/k6-docs.git"
+        print(f"Cloning {repo_url}...")
+        git.Repo.clone_from(repo_url, temp_dir, depth=1)  # Shallow clone for speed
+        print("Repository cloned successfully!")
+        
+        # Return path to docs/sources
+        docs_path = os.path.join(temp_dir, "docs", "sources")
+        
+        if not os.path.exists(docs_path):
+            raise FileNotFoundError(f"Documentation sources not found at {docs_path}")
+        
+        print(f"Using k6-docs at {docs_path}")
+        return docs_path
+        
+    except Exception as e:
+        print(f"Error cloning k6-docs repository: {e}")
+        cleanup_temp_dir()
+        raise
 
 def extract_metadata_from_path(file_path: str, base_path: str) -> Dict[str, str]:
     """Extract tool, version, and category metadata from file path."""
