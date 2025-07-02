@@ -5,10 +5,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"os"
 	"os/exec"
 	"strings"
 	"time"
+
+	"github.com/oleiade/k6-mcp/internal/logging"
 )
 
 const (
@@ -50,9 +53,18 @@ func (e *ValidationError) Unwrap() error {
 // ValidateK6Script validates a k6 script by executing it with minimal configuration.
 func ValidateK6Script(ctx context.Context, script string) (*ValidationResult, error) {
 	startTime := time.Now()
+	logger := logging.WithComponent("validator")
+
+	logger.DebugContext(ctx, "Starting script validation",
+		slog.Int("script_size", len(script)),
+	)
 
 	// Input validation
 	if err := validateInput(script); err != nil {
+		logging.ValidationEvent(ctx, "input_validation", false, map[string]interface{}{
+			"error": err.Error(),
+			"script_size": len(script),
+		})
 		return &ValidationResult{
 			Valid:    false,
 			Error:    err.Error(),
@@ -60,9 +72,14 @@ func ValidateK6Script(ctx context.Context, script string) (*ValidationResult, er
 		}, err
 	}
 
+	logging.ValidationEvent(ctx, "input_validation", true, map[string]interface{}{
+		"script_size": len(script),
+	})
+
 	// Create secure temporary file
 	tempFile, cleanup, err := createSecureTempFile(script)
 	if err != nil {
+		logging.FileOperation(ctx, "validator", "create_temp_file", tempFile, err)
 		return &ValidationResult{
 			Valid:    false,
 			Error:    fmt.Sprintf("failed to create temporary file: %v", err),
@@ -71,9 +88,17 @@ func ValidateK6Script(ctx context.Context, script string) (*ValidationResult, er
 	}
 	defer cleanup()
 
+	logging.FileOperation(ctx, "validator", "create_temp_file", tempFile, nil)
+
 	// Execute k6 validation
 	result, err := executeK6Validation(ctx, tempFile)
 	result.Duration = time.Since(startTime).String()
+
+	logger.DebugContext(ctx, "Validation completed",
+		slog.Bool("valid", result.Valid),
+		slog.Int("exit_code", result.ExitCode),
+		slog.Duration("duration", time.Since(startTime)),
+	)
 
 	return result, err
 }
@@ -132,7 +157,10 @@ func createSecureTempFile(script string) (string, func(), error) {
 	filename := tmpFile.Name()
 	cleanup := func() {
 		if removeErr := os.Remove(filename); removeErr != nil {
-			fmt.Fprintf(os.Stderr, "Warning: failed to remove temporary file %s: %v\n", filename, removeErr)
+			logging.WithComponent("validator").Warn("Failed to remove temporary file",
+				slog.String("operation", "cleanup"),
+				slog.String("error", removeErr.Error()),
+			)
 		}
 	}
 
@@ -178,22 +206,36 @@ func setupTempFile(tmpFile *os.File, script string) error {
 
 // cleanupTempFile safely cleans up a temporary file.
 func cleanupTempFile(tmpFile *os.File) {
+	logger := logging.WithComponent("validator")
+	
 	if closeErr := tmpFile.Close(); closeErr != nil {
-		fmt.Fprintf(os.Stderr, "Warning: failed to close temp file: %v\n", closeErr)
+		logger.Warn("Failed to close temp file",
+			slog.String("operation", "cleanup"),
+			slog.String("error", closeErr.Error()),
+		)
 	}
 	if removeErr := os.Remove(tmpFile.Name()); removeErr != nil {
-		fmt.Fprintf(os.Stderr, "Warning: failed to remove temp file: %v\n", removeErr)
+		logger.Warn("Failed to remove temp file",
+			slog.String("operation", "cleanup"),
+			slog.String("error", removeErr.Error()),
+		)
 	}
 }
 
 // executeK6Validation executes k6 with the given script file.
 func executeK6Validation(ctx context.Context, scriptPath string) (*ValidationResult, error) {
+	logger := logging.WithComponent("validator")
+	startTime := time.Now()
+	
 	// Create context with timeout
 	cmdCtx, cancel := context.WithTimeout(ctx, DefaultTimeout)
 	defer cancel()
 
 	// Check if k6 is available
 	if _, err := exec.LookPath("k6"); err != nil {
+		logger.ErrorContext(ctx, "k6 executable not found",
+			slog.String("error", err.Error()),
+		)
 		return &ValidationResult{
 			Valid: false,
 			Error: "k6 executable not found in PATH",
@@ -213,8 +255,16 @@ func executeK6Validation(ctx context.Context, scriptPath string) (*ValidationRes
 		"HOME=" + os.Getenv("HOME"),
 	}
 
+	logger.DebugContext(ctx, "Executing k6 validation command",
+		slog.String("command", "k6 run"),
+		slog.String("script_path", getPathType(scriptPath)),
+	)
+
 	// Execute command and capture output
 	stdout, stderr, exitCode, err := executeCommand(cmd)
+	
+	// Log execution results
+	logging.ExecutionEvent(ctx, "validator", "k6 run", time.Since(startTime), exitCode, err)
 
 	result := &ValidationResult{
 		Valid:    exitCode == 0,
@@ -277,4 +327,16 @@ func executeCommand(cmd *exec.Cmd) (stdout, stderr string, exitCode int, err err
 		return stdout, stderr, exitCode, fmt.Errorf("command execution failed: %w", err)
 	}
 	return stdout, stderr, exitCode, nil
+}
+
+// getPathType returns a safe representation of file paths for logging
+func getPathType(path string) string {
+	if strings.Contains(path, "temp") || strings.Contains(path, "tmp") {
+		return "temporary"
+	} else if strings.HasSuffix(path, ".js") {
+		return "javascript"
+	} else if strings.HasSuffix(path, ".ts") {
+		return "typescript"
+	}
+	return "other"
 }

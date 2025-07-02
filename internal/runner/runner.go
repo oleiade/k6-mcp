@@ -6,12 +6,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
 	"os"
 	"os/exec"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/oleiade/k6-mcp/internal/logging"
 	"github.com/oleiade/k6-mcp/internal/security"
 )
 
@@ -89,9 +91,19 @@ func (e *RunError) Unwrap() error {
 // RunK6Test executes a k6 script with the specified options.
 func RunK6Test(ctx context.Context, script string, options *RunOptions) (*RunResult, error) {
 	startTime := time.Now()
+	logger := logging.WithComponent("runner")
+
+	// Log test configuration
+	logger.DebugContext(ctx, "Starting k6 test execution",
+		slog.Int("script_size", len(script)),
+		slog.Any("options", sanitizeRunOptions(options)),
+	)
 
 	// Input validation
 	if err := validateRunInput(script, options); err != nil {
+		logger.WarnContext(ctx, "Test input validation failed",
+			slog.String("error", err.Error()),
+		)
 		return &RunResult{
 			Success:  false,
 			Error:    err.Error(),
@@ -99,9 +111,12 @@ func RunK6Test(ctx context.Context, script string, options *RunOptions) (*RunRes
 		}, err
 	}
 
+	logger.DebugContext(ctx, "Test input validation passed")
+
 	// Create secure temporary file
 	tempFile, cleanup, err := createSecureTempFile(script)
 	if err != nil {
+		logging.FileOperation(ctx, "runner", "create_temp_file", tempFile, err)
 		return &RunResult{
 			Success:  false,
 			Error:    fmt.Sprintf("failed to create temporary file: %v", err),
@@ -110,9 +125,19 @@ func RunK6Test(ctx context.Context, script string, options *RunOptions) (*RunRes
 	}
 	defer cleanup()
 
+	logging.FileOperation(ctx, "runner", "create_temp_file", tempFile, nil)
+
 	// Execute k6 test
 	result, err := executeK6Test(ctx, tempFile, options)
 	result.Duration = time.Since(startTime).String()
+
+	logger.InfoContext(ctx, "k6 test execution completed",
+		slog.Bool("success", result.Success),
+		slog.Int("exit_code", result.ExitCode),
+		slog.Duration("duration", time.Since(startTime)),
+		slog.Int("total_requests", result.Summary.TotalRequests),
+		slog.Int("failed_requests", result.Summary.FailedRequests),
+	)
 
 	return result, err
 }
@@ -235,7 +260,10 @@ func createSecureTempFile(script string) (string, func(), error) {
 	filename := tmpFile.Name()
 	cleanup := func() {
 		if removeErr := os.Remove(filename); removeErr != nil {
-			fmt.Fprintf(os.Stderr, "Warning: failed to remove temporary file %s: %v\n", filename, removeErr)
+			logging.WithComponent("runner").Warn("Failed to remove temporary file",
+				slog.String("operation", "cleanup"),
+				slog.String("error", removeErr.Error()),
+			)
 		}
 	}
 
@@ -281,22 +309,36 @@ func setupTempFile(tmpFile *os.File, script string) error {
 
 // cleanupTempFile safely cleans up a temporary file.
 func cleanupTempFile(tmpFile *os.File) {
+	logger := logging.WithComponent("runner")
+	
 	if closeErr := tmpFile.Close(); closeErr != nil {
-		fmt.Fprintf(os.Stderr, "Warning: failed to close temp file: %v\n", closeErr)
+		logger.Warn("Failed to close temp file",
+			slog.String("operation", "cleanup"),
+			slog.String("error", closeErr.Error()),
+		)
 	}
 	if removeErr := os.Remove(tmpFile.Name()); removeErr != nil {
-		fmt.Fprintf(os.Stderr, "Warning: failed to remove temp file: %v\n", removeErr)
+		logger.Warn("Failed to remove temp file",
+			slog.String("operation", "cleanup"),
+			slog.String("error", removeErr.Error()),
+		)
 	}
 }
 
 // executeK6Test executes k6 with the given script file and options.
 func executeK6Test(ctx context.Context, scriptPath string, options *RunOptions) (*RunResult, error) {
+	logger := logging.WithComponent("runner")
+	startTime := time.Now()
+	
 	// Create context with timeout
 	cmdCtx, cancel := context.WithTimeout(ctx, DefaultTimeout)
 	defer cancel()
 
 	// Check if k6 is available
 	if err := security.ValidateEnvironment(); err != nil {
+		logger.ErrorContext(ctx, "k6 executable not found",
+			slog.String("error", err.Error()),
+		)
 		return &RunResult{
 			Success: false,
 			Error:   "k6 executable not found in PATH",
@@ -310,6 +352,11 @@ func executeK6Test(ctx context.Context, scriptPath string, options *RunOptions) 
 	// Build k6 command arguments
 	args := buildK6Args(scriptPath, options)
 
+	logger.DebugContext(ctx, "Executing k6 test command",
+		slog.Any("args", args),
+		slog.String("script_path", getPathType(scriptPath)),
+	)
+
 	// Prepare k6 command
 	// #nosec G204 - k6 binary is validated to exist, args are sanitized
 	cmd := exec.CommandContext(cmdCtx, "k6", args...)
@@ -319,6 +366,9 @@ func executeK6Test(ctx context.Context, scriptPath string, options *RunOptions) 
 
 	// Execute command and capture output
 	stdout, stderr, exitCode, err := executeCommand(cmd)
+	
+	// Log execution results
+	logging.ExecutionEvent(ctx, "runner", "k6 run", time.Since(startTime), exitCode, err)
 
 	// Sanitize output to prevent information leakage
 	stdout = security.SanitizeOutput(stdout)
@@ -548,4 +598,31 @@ func calculatePercentile(values []float64, percentile float64) float64 {
 		index = len(values) - 1
 	}
 	return values[index]
+}
+
+// sanitizeRunOptions removes sensitive information from run options for logging
+func sanitizeRunOptions(options *RunOptions) interface{} {
+	if options == nil {
+		return nil
+	}
+	
+	return map[string]interface{}{
+		"vus":        options.VUs,
+		"duration":   options.Duration,
+		"iterations": options.Iterations,
+		"stages":     options.Stages,
+		"has_options": options.Options != nil,
+	}
+}
+
+// getPathType returns a safe representation of file paths for logging
+func getPathType(path string) string {
+	if strings.Contains(path, "temp") || strings.Contains(path, "tmp") {
+		return "temporary"
+	} else if strings.HasSuffix(path, ".js") {
+		return "javascript"
+	} else if strings.HasSuffix(path, ".ts") {
+		return "typescript"
+	}
+	return "other"
 }

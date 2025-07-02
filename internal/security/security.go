@@ -4,10 +4,13 @@ package security
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"os"
 	"os/exec"
 	"strings"
 	"time"
+
+	"github.com/oleiade/k6-mcp/internal/logging"
 )
 
 const (
@@ -37,27 +40,54 @@ func (e *Error) Unwrap() error {
 
 // ValidateScriptContent performs security validation on script content.
 func ValidateScriptContent(content string) error {
+	logger := logging.WithComponent("security")
+	
+	logger.Debug("Starting script content validation",
+		slog.Int("content_size", len(content)),
+	)
+
 	if len(content) == 0 {
-		return &Error{
+		err := &Error{
 			Type:    "EMPTY_CONTENT",
 			Message: "script content cannot be empty",
 		}
+		
+		logging.SecurityEvent(context.Background(), "empty_content", "medium", 
+			"Script content validation failed: empty content", 
+			map[string]interface{}{
+				"content_size": len(content),
+			})
+		
+		return err
 	}
 
 	if len(content) > MaxScriptSizeBytes {
-		return &Error{
+		err := &Error{
 			Type:    "SIZE_LIMIT_EXCEEDED",
 			Message: fmt.Sprintf(
 				"script size (%d bytes) exceeds maximum allowed size (%d bytes)",
 				len(content), MaxScriptSizeBytes,
 			),
 		}
+		
+		logging.SecurityEvent(context.Background(), "size_limit_exceeded", "high", 
+			"Script content validation failed: size limit exceeded", 
+			map[string]interface{}{
+				"content_size": len(content),
+				"max_size": MaxScriptSizeBytes,
+			})
+		
+		return err
 	}
 
 	// Check for dangerous patterns that could be used for code injection or system access
 	if err := checkDangerousPatterns(content); err != nil {
 		return err
 	}
+
+	logger.Debug("Script content validation passed",
+		slog.Int("content_size", len(content)),
+	)
 
 	return nil
 }
@@ -105,10 +135,20 @@ func checkDangerousPatterns(content string) error {
 
 	for pattern, description := range dangerousPatterns {
 		if strings.Contains(contentLower, strings.ToLower(pattern)) {
-			return &Error{
+			err := &Error{
 				Type:    "DANGEROUS_PATTERN",
 				Message: fmt.Sprintf("script contains potentially dangerous pattern related to %s: %s", description, pattern),
 			}
+			
+			logging.SecurityEvent(context.Background(), "dangerous_pattern_detected", "critical", 
+				"Dangerous pattern detected in script content", 
+				map[string]interface{}{
+					"pattern": pattern,
+					"description": description,
+					"content_size": len(content),
+				})
+			
+			return err
 		}
 	}
 
@@ -142,20 +182,36 @@ func SanitizeOutput(output string) string {
 
 // ValidateEnvironment validates that the required tools are available and properly configured.
 func ValidateEnvironment() error {
+	logger := logging.WithComponent("security")
+	
+	logger.Debug("Validating environment dependencies")
+	
 	// Check if k6 is available in PATH
 	if _, err := exec.LookPath("k6"); err != nil {
-		return &Error{
+		securityErr := &Error{
 			Type:    "MISSING_DEPENDENCY",
 			Message: "k6 executable not found in PATH",
 			Cause:   err,
 		}
+		
+		logging.SecurityEvent(context.Background(), "missing_dependency", "high", 
+			"Required dependency not found in environment", 
+			map[string]interface{}{
+				"dependency": "k6",
+				"error": err.Error(),
+			})
+		
+		return securityErr
 	}
 
+	logger.Debug("Environment validation passed")
 	return nil
 }
 
 // SecureEnvironment returns a minimal, secure environment for command execution.
 func SecureEnvironment() []string {
+	logger := logging.WithComponent("security")
+	
 	// Provide only essential environment variables
 	essential := []string{
 		"PATH=" + os.Getenv("PATH"),
@@ -165,6 +221,11 @@ func SecureEnvironment() []string {
 	if home := os.Getenv("HOME"); home != "" {
 		essential = append(essential, "HOME="+home)
 	}
+
+	logger.Debug("Created secure environment",
+		slog.Int("env_var_count", len(essential)),
+		slog.Bool("has_home", os.Getenv("HOME") != ""),
+	)
 
 	return essential
 }

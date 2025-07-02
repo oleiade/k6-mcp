@@ -5,11 +5,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
+	"log/slog"
+	"time"
 
+	"github.com/google/uuid"
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
 
+	"github.com/oleiade/k6-mcp/internal/logging"
 	"github.com/oleiade/k6-mcp/internal/runner"
 	"github.com/oleiade/k6-mcp/internal/search"
 	"github.com/oleiade/k6-mcp/internal/validator"
@@ -20,6 +23,13 @@ const (
 )
 
 func main() {
+	logger := logging.Default()
+	
+	logger.Info("Starting k6 MCP server",
+		slog.String("version", "1.0.0"),
+		slog.Bool("resource_capabilities", true),
+	)
+
 	s := server.NewMCPServer(
 		"k6",
 		"1.0.0",
@@ -91,30 +101,48 @@ func main() {
 
 	s.AddTool(searchTool, handleSearch)
 
+	logger.Info("Starting MCP server on stdio")
+	
 	if err := server.ServeStdio(s); err != nil {
-		log.Fatal(err)
+		logger.Error("Server error", slog.String("error", err.Error()))
+		panic(err)
 	}
 }
 
 // handleValidate handles the validate tool requests.
 func handleValidate(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	// Add request correlation ID
+	requestID := uuid.New().String()
+	ctx = logging.ContextWithRequestID(ctx, requestID)
+	startTime := time.Now()
+	
 	args := request.GetArguments()
+	
+	// Log request start
+	logging.RequestStart(ctx, "validate", args)
 
 	// Extract script content from arguments
 	scriptValue, exists := args["script"]
 	if !exists {
-		return mcp.NewToolResultError("missing required parameter: script"), nil
+		err := fmt.Errorf("missing required parameter: script")
+		logging.RequestEnd(ctx, "validate", false, time.Since(startTime), err)
+		return mcp.NewToolResultError(err.Error()), nil
 	}
 
 	script, ok := scriptValue.(string)
 	if !ok {
-		return mcp.NewToolResultError("script parameter must be a string"), nil
+		err := fmt.Errorf("script parameter must be a string")
+		logging.RequestEnd(ctx, "validate", false, time.Since(startTime), err)
+		return mcp.NewToolResultError(err.Error()), nil
 	}
 
 	// Validate the k6 script
 	result, err := validator.ValidateK6Script(ctx, script)
 	if err != nil {
-		log.Printf("Validation error: %v", err)
+		logging.WithContext(ctx).Error("Validation processing error", 
+			slog.String("error", err.Error()),
+			slog.String("error_type", "validation_error"),
+		)
 		// Return the validation result even if there was an error
 		// The result will contain error details for the client
 	}
@@ -122,43 +150,59 @@ func handleValidate(ctx context.Context, request mcp.CallToolRequest) (*mcp.Call
 	// Convert result to JSON for structured response
 	resultJSON, err := json.MarshalIndent(result, "", "  ")
 	if err != nil {
+		logging.RequestEnd(ctx, "validate", false, time.Since(startTime), err)
 		return mcp.NewToolResultError("failed to serialize validation result"), err
 	}
 
-	// Return structured result
-	if result.Valid {
-		return mcp.NewToolResultText(string(resultJSON)), nil
-	}
+	// Log request completion
+	success := result != nil && result.Valid
+	logging.RequestEnd(ctx, "validate", success, time.Since(startTime), nil)
 
-	// For invalid scripts, still return the result
+	// Return structured result
 	return mcp.NewToolResultText(string(resultJSON)), nil
 }
 
 // handleRun handles the run tool requests.
 func handleRun(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	// Add request correlation ID
+	requestID := uuid.New().String()
+	ctx = logging.ContextWithRequestID(ctx, requestID)
+	startTime := time.Now()
+	
 	args := request.GetArguments()
+	
+	// Log request start
+	logging.RequestStart(ctx, "run", args)
 
 	// Extract script content from arguments
 	scriptValue, exists := args["script"]
 	if !exists {
-		return mcp.NewToolResultError("missing required parameter: script"), nil
+		err := fmt.Errorf("missing required parameter: script")
+		logging.RequestEnd(ctx, "run", false, time.Since(startTime), err)
+		return mcp.NewToolResultError(err.Error()), nil
 	}
 
 	script, ok := scriptValue.(string)
 	if !ok {
-		return mcp.NewToolResultError("script parameter must be a string"), nil
+		err := fmt.Errorf("script parameter must be a string")
+		logging.RequestEnd(ctx, "run", false, time.Since(startTime), err)
+		return mcp.NewToolResultError(err.Error()), nil
 	}
 
 	// Parse run options from arguments
 	options, err := parseRunOptions(args)
 	if err != nil {
+		logging.RequestEnd(ctx, "run", false, time.Since(startTime), err)
 		return mcp.NewToolResultError(fmt.Sprintf("invalid parameters: %v", err)), nil
 	}
 
 	// Run the k6 test
 	result, err := runner.RunK6Test(ctx, script, options)
 	if err != nil {
-		log.Printf("Run error: %v", err)
+		logging.WithContext(ctx).Error("Run processing error", 
+			slog.String("error", err.Error()),
+			slog.String("error_type", "run_error"),
+		)
 		// Return the run result even if there was an error
 		// The result will contain error details for the client
 	}
@@ -166,15 +210,15 @@ func handleRun(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolR
 	// Convert result to JSON for structured response
 	resultJSON, err := json.MarshalIndent(result, "", "  ")
 	if err != nil {
+		logging.RequestEnd(ctx, "run", false, time.Since(startTime), err)
 		return mcp.NewToolResultError("failed to serialize run result"), err
 	}
 
-	// Return structured result
-	if result.Success {
-		return mcp.NewToolResultText(string(resultJSON)), nil
-	}
+	// Log request completion
+	success := result != nil && result.Success
+	logging.RequestEnd(ctx, "run", success, time.Since(startTime), nil)
 
-	// For failed tests, still return the result with details
+	// Return structured result
 	return mcp.NewToolResultText(string(resultJSON)), nil
 }
 
@@ -237,21 +281,35 @@ func parseRunOptions(args map[string]interface{}) (*runner.RunOptions, error) {
 
 // handleSearch handles the search tool requests.
 func handleSearch(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	// Add request correlation ID
+	requestID := uuid.New().String()
+	ctx = logging.ContextWithRequestID(ctx, requestID)
+	startTime := time.Now()
+	
 	args := request.GetArguments()
+	
+	// Log request start
+	logging.RequestStart(ctx, "search", args)
 
 	// Extract query from arguments
 	queryValue, exists := args["query"]
 	if !exists {
-		return mcp.NewToolResultError("missing required parameter: query"), nil
+		err := fmt.Errorf("missing required parameter: query")
+		logging.RequestEnd(ctx, "search", false, time.Since(startTime), err)
+		return mcp.NewToolResultError(err.Error()), nil
 	}
 
 	query, ok := queryValue.(string)
 	if !ok {
-		return mcp.NewToolResultError("query parameter must be a string"), nil
+		err := fmt.Errorf("query parameter must be a string")
+		logging.RequestEnd(ctx, "search", false, time.Since(startTime), err)
+		return mcp.NewToolResultError(err.Error()), nil
 	}
 
 	if query == "" {
-		return mcp.NewToolResultError("query parameter cannot be empty"), nil
+		err := fmt.Errorf("query parameter cannot be empty")
+		logging.RequestEnd(ctx, "search", false, time.Since(startTime), err)
+		return mcp.NewToolResultError(err.Error()), nil
 	}
 
 	// Parse search options
@@ -269,27 +327,34 @@ func handleSearch(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallTo
 			}
 			options.MaxResults = maxResultsInt
 		} else {
-			return mcp.NewToolResultError("max_results must be a number"), nil
+			err := fmt.Errorf("max_results must be a number")
+			logging.RequestEnd(ctx, "search", false, time.Since(startTime), err)
+			return mcp.NewToolResultError(err.Error()), nil
 		}
 	}
 
 	// Create search client and perform search
 	client, err := search.NewSearch(search.BackendChroma, options)
 	if err != nil {
-		log.Printf("Failed to create search client: %v", err)
+		logging.RequestEnd(ctx, "search", false, time.Since(startTime), err)
 		return mcp.NewToolResultError(fmt.Sprintf("failed to create search client: %v", err)), nil
 	}
 	defer func() {
 		if closeErr := client.Close(); closeErr != nil {
-			log.Printf("Failed to close search client: %v", closeErr)
+			logging.WithContext(ctx).Warn("Failed to close search client", 
+				slog.String("error", closeErr.Error()),
+			)
 		}
 	}()
 
 	results, err := client.Search(ctx, query)
 	if err != nil {
-		log.Printf("Search error: %v", err)
+		logging.RequestEnd(ctx, "search", false, time.Since(startTime), err)
 		return mcp.NewToolResultError(fmt.Sprintf("search failed: %v", err)), nil
 	}
+
+	// Log search results
+	logging.SearchEvent(ctx, query, len(results), time.Since(startTime), nil)
 
 	// Create response structure
 	response := struct {
@@ -305,8 +370,12 @@ func handleSearch(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallTo
 	// Convert result to JSON for structured response
 	resultJSON, err := json.MarshalIndent(response, "", "  ")
 	if err != nil {
+		logging.RequestEnd(ctx, "search", false, time.Since(startTime), err)
 		return mcp.NewToolResultError("failed to serialize search results"), err
 	}
+
+	// Log request completion
+	logging.RequestEnd(ctx, "search", true, time.Since(startTime), nil)
 
 	return mcp.NewToolResultText(string(resultJSON)), nil
 }
