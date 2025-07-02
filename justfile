@@ -1,6 +1,5 @@
 # Initialize the repository's submodules
-initialize:
-    git submodule update --init --recursive
+initialize: chrome ingest verify
 
 # Run the k6-mcp server
 run:
