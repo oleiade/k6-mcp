@@ -20,14 +20,8 @@ brew install just
 With `just` installed, we can now run Chroma DB in the background, and ingest the k6 documentation into it to support the k6-mcp server's search feature.
 
 ```bash
-# Run the vector database in the background
-just chroma
-
-# Ensure the k6-docs submodule is initialized and pulled
+# This will start a chromaDB container, and proceed with feeding it k6 documentation sources
 just initialize
-
-# Ingest the k6 documentation into the vector database
-just ingest
 ```
 
 ### Editor Integration
