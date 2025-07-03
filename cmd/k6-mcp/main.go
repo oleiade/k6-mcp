@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	"os"
 	"strings"
 	"time"
 
@@ -101,6 +102,29 @@ func main() {
 	)
 
 	s.AddTool(searchTool, handleSearch)
+
+	// In your mcp-go server setup
+	bestPracticesResource := mcp.NewResource(
+		"docs://k6/best_practices",
+		"k6 best practices",
+		mcp.WithResourceDescription("Provides a list of best practices for writing k6 scripts."),
+		mcp.WithMIMEType("text/markdown"),
+	)
+
+	s.AddResource(bestPracticesResource, func(ctx context.Context, request mcp.ReadResourceRequest) ([]mcp.ResourceContents, error) {
+		content, err := os.ReadFile("README.md")
+		if err != nil {
+			return nil, err
+		}
+
+		return []mcp.ResourceContents{
+			mcp.TextResourceContents{
+				URI:      "docs://readme",
+				MIMEType: "text/markdown",
+				Text:     string(content),
+			},
+		}, nil
+	})
 
 	logger.Info("Starting MCP server on stdio")
 
