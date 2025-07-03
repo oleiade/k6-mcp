@@ -3,6 +3,7 @@ package logging
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"strings"
@@ -12,10 +13,10 @@ import (
 // RequestStart logs the beginning of an MCP request
 func RequestStart(ctx context.Context, toolName string, params map[string]interface{}) {
 	logger := WithTool(toolName)
-	
+
 	// Sanitize parameters for logging (exclude large script content)
 	sanitizedParams := sanitizeParams(params)
-	
+
 	logger.InfoContext(ctx, "MCP request started",
 		slog.Any("params", sanitizedParams),
 		slog.Time("start_time", time.Now()),
@@ -25,7 +26,7 @@ func RequestStart(ctx context.Context, toolName string, params map[string]interf
 // RequestEnd logs the completion of an MCP request
 func RequestEnd(ctx context.Context, toolName string, success bool, duration time.Duration, err error) {
 	logger := WithTool(toolName)
-	
+
 	if err != nil {
 		logger.ErrorContext(ctx, "MCP request failed",
 			slog.Bool("success", success),
@@ -46,7 +47,7 @@ func RequestEnd(ctx context.Context, toolName string, success bool, duration tim
 // ValidationEvent logs validation-related events
 func ValidationEvent(ctx context.Context, event string, success bool, details map[string]interface{}) {
 	logger := WithComponent("validator")
-	
+
 	if success {
 		if details != nil {
 			logger.DebugContext(ctx, "Validation event",
@@ -79,7 +80,7 @@ func ValidationEvent(ctx context.Context, event string, success bool, details ma
 // SecurityEvent logs security-related events
 func SecurityEvent(ctx context.Context, eventType string, severity string, message string, details map[string]interface{}) {
 	logger := WithComponent("security")
-	
+
 	switch severity {
 	case "critical", "high":
 		if details != nil {
@@ -126,7 +127,7 @@ func SecurityEvent(ctx context.Context, eventType string, severity string, messa
 // ExecutionEvent logs command execution events
 func ExecutionEvent(ctx context.Context, component string, command string, duration time.Duration, exitCode int, err error) {
 	logger := WithComponent(component)
-	
+
 	if err != nil {
 		logger.ErrorContext(ctx, "Command execution failed",
 			slog.String("command", command),
@@ -149,7 +150,7 @@ func ExecutionEvent(ctx context.Context, component string, command string, durat
 // SearchEvent logs search-related events
 func SearchEvent(ctx context.Context, query string, resultCount int, duration time.Duration, err error) {
 	logger := WithComponent("search")
-	
+
 	if err != nil {
 		logger.ErrorContext(ctx, "Search query failed",
 			slog.String("query_hash", hashString(query)), // Hash query for privacy
@@ -172,7 +173,7 @@ func SearchEvent(ctx context.Context, query string, resultCount int, duration ti
 // FileOperation logs file-related operations
 func FileOperation(ctx context.Context, component string, operation string, path string, err error) {
 	logger := WithComponent(component)
-	
+
 	if err != nil {
 		logger.ErrorContext(ctx, "File operation failed",
 			slog.String("operation", operation),
@@ -193,16 +194,16 @@ func sanitizeParams(params map[string]interface{}) map[string]interface{} {
 	if params == nil {
 		return nil
 	}
-	
+
 	sanitized := make(map[string]interface{})
-	
+
 	for key, value := range params {
 		switch key {
 		case "script":
 			// For script content, only log metadata
 			if str, ok := value.(string); ok {
 				sanitized[key] = map[string]interface{}{
-					"length": len(str),
+					"length":      len(str),
 					"has_content": len(str) > 0,
 				}
 			}
@@ -210,7 +211,7 @@ func sanitizeParams(params map[string]interface{}) map[string]interface{} {
 			sanitized[key] = value
 		}
 	}
-	
+
 	return sanitized
 }
 
@@ -219,22 +220,25 @@ func getErrorType(err error) string {
 	if err == nil {
 		return ""
 	}
-	
+
 	// Try to extract error type from custom error types
-	switch e := err.(type) {
-	case interface{ Error() string }:
-		errStr := e.Error()
-		if strings.Contains(errStr, "timeout") || strings.Contains(errStr, "deadline") {
-			return "timeout"
-		} else if strings.Contains(errStr, "security") {
-			return "security"
-		} else if strings.Contains(errStr, "validation") {
-			return "validation"
-		} else if strings.Contains(errStr, "execution") {
-			return "execution"
+	{
+		var e interface{ Error() string }
+		switch {
+		case errors.As(err, &e):
+			errStr := e.Error()
+			if strings.Contains(errStr, "timeout") || strings.Contains(errStr, "deadline") {
+				return "timeout"
+			} else if strings.Contains(errStr, "security") {
+				return "security"
+			} else if strings.Contains(errStr, "validation") {
+				return "validation"
+			} else if strings.Contains(errStr, "execution") {
+				return "execution"
+			}
 		}
 	}
-	
+
 	return "unknown"
 }
 
@@ -255,7 +259,7 @@ func hashString(s string) string {
 	if len(s) == 0 {
 		return "empty"
 	}
-	
+
 	// Simple hash for privacy - just use length and first/last char
 	first := string(s[0])
 	last := string(s[len(s)-1])

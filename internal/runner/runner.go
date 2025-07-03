@@ -34,10 +34,10 @@ const (
 
 // RunOptions contains configuration options for running k6 tests.
 type RunOptions struct {
-	VUs        int               `json:"vus,omitempty"`
-	Duration   string            `json:"duration,omitempty"`
-	Iterations int               `json:"iterations,omitempty"`
-	Stages     []Stage           `json:"stages,omitempty"`
+	VUs        int                    `json:"vus,omitempty"`
+	Duration   string                 `json:"duration,omitempty"`
+	Iterations int                    `json:"iterations,omitempty"`
+	Stages     []Stage                `json:"stages,omitempty"`
 	Options    map[string]interface{} `json:"options,omitempty"`
 }
 
@@ -49,19 +49,19 @@ type Stage struct {
 
 // RunResult contains the result of a k6 test execution.
 type RunResult struct {
-	Success        bool                   `json:"success"`
-	ExitCode       int                    `json:"exit_code"`
-	Stdout         string                 `json:"stdout"`
-	Stderr         string                 `json:"stderr"`
-	Error          string                 `json:"error,omitempty"`
-	Duration       string                 `json:"duration"`
-	Metrics        map[string]interface{} `json:"metrics,omitempty"`
-	Summary        TestSummary            `json:"summary,omitempty"`
-	Analysis       TestAnalysis           `json:"analysis"`
-	Issues         []TestIssue            `json:"issues,omitempty"`
-	Recommendations []string              `json:"recommendations,omitempty"`
-	NextSteps      []string               `json:"next_steps,omitempty"`
-	Performance    PerformanceInsights    `json:"performance"`
+	Success         bool                   `json:"success"`
+	ExitCode        int                    `json:"exit_code"`
+	Stdout          string                 `json:"stdout"`
+	Stderr          string                 `json:"stderr"`
+	Error           string                 `json:"error,omitempty"`
+	Duration        string                 `json:"duration"`
+	Metrics         map[string]interface{} `json:"metrics,omitempty"`
+	Summary         TestSummary            `json:"summary,omitempty"`
+	Analysis        TestAnalysis           `json:"analysis"`
+	Issues          []TestIssue            `json:"issues,omitempty"`
+	Recommendations []string               `json:"recommendations,omitempty"`
+	NextSteps       []string               `json:"next_steps,omitempty"`
+	Performance     PerformanceInsights    `json:"performance"`
 }
 
 // TestSummary contains a summary of the test execution results.
@@ -77,52 +77,52 @@ type TestSummary struct {
 
 // TestAnalysis provides high-level analysis of test execution.
 type TestAnalysis struct {
-	Status       string  `json:"status"`        // "success", "failed", "warning"
-	Grade        string  `json:"grade"`         // "A", "B", "C", "D", "F"
-	Description  string  `json:"description"`   // Human-readable summary
-	SuccessRate  float64 `json:"success_rate"`  // Percentage of successful requests
-	IssueCount   int     `json:"issue_count"`   // Number of issues found
-	Severity     string  `json:"severity"`      // "critical", "high", "medium", "low", "none"
+	Status      string  `json:"status"`       // "success", "failed", "warning"
+	Grade       string  `json:"grade"`        // "A", "B", "C", "D", "F"
+	Description string  `json:"description"`  // Human-readable summary
+	SuccessRate float64 `json:"success_rate"` // Percentage of successful requests
+	IssueCount  int     `json:"issue_count"`  // Number of issues found
+	Severity    string  `json:"severity"`     // "critical", "high", "medium", "low", "none"
 }
 
 // TestIssue represents a specific issue found during test execution.
 type TestIssue struct {
-	Type        string  `json:"type"`         // "performance", "error", "threshold", "network"
-	Severity    string  `json:"severity"`     // "critical", "high", "medium", "low"
-	Message     string  `json:"message"`      // Description of the issue
-	Suggestion  string  `json:"suggestion"`   // Specific fix recommendation
-	Value       float64 `json:"value,omitempty"`      // Actual value (for metrics)
-	Threshold   float64 `json:"threshold,omitempty"`  // Expected threshold (for performance issues)
-	Count       int     `json:"count,omitempty"`      // Number of occurrences
+	Type       string  `json:"type"`                // "performance", "error", "threshold", "network"
+	Severity   string  `json:"severity"`            // "critical", "high", "medium", "low"
+	Message    string  `json:"message"`             // Description of the issue
+	Suggestion string  `json:"suggestion"`          // Specific fix recommendation
+	Value      float64 `json:"value,omitempty"`     // Actual value (for metrics)
+	Threshold  float64 `json:"threshold,omitempty"` // Expected threshold (for performance issues)
+	Count      int     `json:"count,omitempty"`     // Number of occurrences
 }
 
 // PerformanceInsights provides detailed performance analysis and recommendations.
 type PerformanceInsights struct {
-	OverallGrade    string                 `json:"overall_grade"`     // "A", "B", "C", "D", "F"
-	ResponseTime    PerformanceMetric      `json:"response_time"`
-	Throughput      PerformanceMetric      `json:"throughput"`
-	ErrorRate       PerformanceMetric      `json:"error_rate"`
-	Recommendations []string               `json:"recommendations"`
-	Bottlenecks     []string               `json:"bottlenecks,omitempty"`
+	OverallGrade    string                   `json:"overall_grade"` // "A", "B", "C", "D", "F"
+	ResponseTime    PerformanceMetric        `json:"response_time"`
+	Throughput      PerformanceMetric        `json:"throughput"`
+	ErrorRate       PerformanceMetric        `json:"error_rate"`
+	Recommendations []string                 `json:"recommendations"`
+	Bottlenecks     []string                 `json:"bottlenecks,omitempty"`
 	Optimizations   []OptimizationSuggestion `json:"optimizations,omitempty"`
 }
 
 // PerformanceMetric represents analysis of a specific performance metric.
 type PerformanceMetric struct {
 	Value       float64 `json:"value"`
-	Grade       string  `json:"grade"`        // "A", "B", "C", "D", "F"
-	Status      string  `json:"status"`       // "excellent", "good", "acceptable", "poor", "critical"
-	Description string  `json:"description"`  // Human-readable assessment
+	Grade       string  `json:"grade"`               // "A", "B", "C", "D", "F"
+	Status      string  `json:"status"`              // "excellent", "good", "acceptable", "poor", "critical"
+	Description string  `json:"description"`         // Human-readable assessment
 	Benchmark   string  `json:"benchmark,omitempty"` // Industry benchmark comparison
 }
 
 // OptimizationSuggestion provides specific optimization recommendations.
 type OptimizationSuggestion struct {
-	Category    string `json:"category"`     // "script", "infrastructure", "configuration"
-	Priority    string `json:"priority"`     // "high", "medium", "low"
-	Title       string `json:"title"`        // Short title
-	Description string `json:"description"`  // Detailed explanation
-	Impact      string `json:"impact"`       // Expected improvement
+	Category    string `json:"category"`    // "script", "infrastructure", "configuration"
+	Priority    string `json:"priority"`    // "high", "medium", "low"
+	Title       string `json:"title"`       // Short title
+	Description string `json:"description"` // Detailed explanation
+	Impact      string `json:"impact"`      // Expected improvement
 }
 
 // RunError represents errors that occur during k6 test execution.
@@ -185,7 +185,7 @@ func RunK6Test(ctx context.Context, script string, options *RunOptions) (*RunRes
 	// Execute k6 test
 	result, err := executeK6Test(ctx, tempFile, options)
 	result.Duration = time.Since(startTime).String()
-	
+
 	// Enhance result with analysis if execution completed
 	if result != nil {
 		enhanceRunResult(result, options)
@@ -371,7 +371,7 @@ func setupTempFile(tmpFile *os.File, script string) error {
 // cleanupTempFile safely cleans up a temporary file.
 func cleanupTempFile(tmpFile *os.File) {
 	logger := logging.WithComponent("runner")
-	
+
 	if closeErr := tmpFile.Close(); closeErr != nil {
 		logger.Warn("Failed to close temp file",
 			slog.String("operation", "cleanup"),
@@ -390,7 +390,7 @@ func cleanupTempFile(tmpFile *os.File) {
 func executeK6Test(ctx context.Context, scriptPath string, options *RunOptions) (*RunResult, error) {
 	logger := logging.WithComponent("runner")
 	startTime := time.Now()
-	
+
 	// Create context with timeout
 	cmdCtx, cancel := context.WithTimeout(ctx, DefaultTimeout)
 	defer cancel()
@@ -401,13 +401,13 @@ func executeK6Test(ctx context.Context, scriptPath string, options *RunOptions) 
 			slog.String("error", err.Error()),
 		)
 		return &RunResult{
-			Success: false,
-			Error:   "k6 executable not found in PATH",
-		}, &RunError{
-			Type:    "K6_NOT_FOUND",
-			Message: "k6 executable not found in PATH",
-			Cause:   err,
-		}
+				Success: false,
+				Error:   "k6 executable not found in PATH",
+			}, &RunError{
+				Type:    "K6_NOT_FOUND",
+				Message: "k6 executable not found in PATH",
+				Cause:   err,
+			}
 	}
 
 	// Build k6 command arguments
@@ -427,7 +427,7 @@ func executeK6Test(ctx context.Context, scriptPath string, options *RunOptions) 
 
 	// Execute command and capture output
 	stdout, stderr, exitCode, err := executeCommand(cmd)
-	
+
 	// Log execution results
 	logging.ExecutionEvent(ctx, "runner", "k6 run", time.Since(startTime), exitCode, err)
 
@@ -639,7 +639,7 @@ func calculateAverage(values []float64) float64 {
 	if len(values) == 0 {
 		return 0
 	}
-	
+
 	var sum float64
 	for _, v := range values {
 		sum += v
@@ -666,12 +666,12 @@ func sanitizeRunOptions(options *RunOptions) interface{} {
 	if options == nil {
 		return nil
 	}
-	
+
 	return map[string]interface{}{
-		"vus":        options.VUs,
-		"duration":   options.Duration,
-		"iterations": options.Iterations,
-		"stages":     options.Stages,
+		"vus":         options.VUs,
+		"duration":    options.Duration,
+		"iterations":  options.Iterations,
+		"stages":      options.Stages,
 		"has_options": options.Options != nil,
 	}
 }
@@ -693,7 +693,7 @@ func enhanceRunResult(result *RunResult, options *RunOptions) {
 	if result == nil {
 		return
 	}
-	
+
 	// Initialize empty slices if nil
 	if result.Issues == nil {
 		result.Issues = []TestIssue{}
@@ -704,21 +704,21 @@ func enhanceRunResult(result *RunResult, options *RunOptions) {
 	if result.NextSteps == nil {
 		result.NextSteps = []string{}
 	}
-	
+
 	// Analyze performance and generate insights
 	result.Performance = analyzePerformance(result)
 	result.Analysis = generateTestAnalysis(result)
-	
+
 	// Identify issues
 	issues := identifyTestIssues(result, options)
 	result.Issues = append(result.Issues, issues...)
-	
+
 	// Generate recommendations
 	result.Recommendations = generateRecommendations(result, options)
-	
+
 	// Generate next steps
 	result.NextSteps = generateRunNextSteps(result)
-	
+
 	// Add workflow integration suggestions
 	addRunWorkflowIntegrationSuggestions(result, options)
 }
@@ -730,32 +730,32 @@ func analyzePerformance(result *RunResult) PerformanceInsights {
 		Bottlenecks:     []string{},
 		Optimizations:   []OptimizationSuggestion{},
 	}
-	
+
 	// Analyze response time
 	insights.ResponseTime = analyzeResponseTime(result.Summary.AvgResponseTime, result.Summary.P95ResponseTime)
-	
+
 	// Analyze throughput
 	insights.Throughput = analyzeThroughput(result.Summary.RequestRate, result.Summary.TotalRequests)
-	
+
 	// Analyze error rate
 	errorRate := 0.0
 	if result.Summary.TotalRequests > 0 {
 		errorRate = float64(result.Summary.FailedRequests) / float64(result.Summary.TotalRequests) * 100
 	}
 	insights.ErrorRate = analyzeErrorRate(errorRate)
-	
+
 	// Calculate overall grade
 	insights.OverallGrade = calculateOverallGrade(insights.ResponseTime.Grade, insights.Throughput.Grade, insights.ErrorRate.Grade)
-	
+
 	// Generate performance recommendations
 	insights.Recommendations = generatePerformanceRecommendations(insights)
-	
+
 	// Identify bottlenecks
 	insights.Bottlenecks = identifyBottlenecks(insights)
-	
+
 	// Generate optimizations
 	insights.Optimizations = generateOptimizations(insights)
-	
+
 	return insights
 }
 
@@ -764,7 +764,7 @@ func analyzeResponseTime(avg, p95 float64) PerformanceMetric {
 	metric := PerformanceMetric{
 		Value: avg,
 	}
-	
+
 	// Grade based on average response time (in milliseconds)
 	switch {
 	case avg <= 100:
@@ -793,7 +793,7 @@ func analyzeResponseTime(avg, p95 float64) PerformanceMetric {
 		metric.Description = "Critical response time"
 		metric.Benchmark = "Exceeds 1s acceptable limit"
 	}
-	
+
 	return metric
 }
 
@@ -802,7 +802,7 @@ func analyzeThroughput(rps float64, totalRequests int) PerformanceMetric {
 	metric := PerformanceMetric{
 		Value: rps,
 	}
-	
+
 	// Grade based on requests per second
 	switch {
 	case rps >= 100:
@@ -831,7 +831,7 @@ func analyzeThroughput(rps float64, totalRequests int) PerformanceMetric {
 		metric.Description = "Critical throughput"
 		metric.Benchmark = "Very low performance"
 	}
-	
+
 	return metric
 }
 
@@ -840,7 +840,7 @@ func analyzeErrorRate(errorRate float64) PerformanceMetric {
 	metric := PerformanceMetric{
 		Value: errorRate,
 	}
-	
+
 	// Grade based on error percentage
 	switch {
 	case errorRate == 0:
@@ -869,7 +869,7 @@ func analyzeErrorRate(errorRate float64) PerformanceMetric {
 		metric.Description = "Critical error rate"
 		metric.Benchmark = "Unacceptable reliability"
 	}
-	
+
 	return metric
 }
 
@@ -878,19 +878,19 @@ func calculateOverallGrade(responseGrade, throughputGrade, errorGrade string) st
 	gradeValues := map[string]int{
 		"A": 4, "B": 3, "C": 2, "D": 1, "F": 0,
 	}
-	
+
 	// Error rate has higher weight
 	errorWeight := 2.0
 	responseWeight := 1.5
 	throughputWeight := 1.0
-	
-	total := float64(gradeValues[errorGrade])*errorWeight + 
-			 float64(gradeValues[responseGrade])*responseWeight + 
-			 float64(gradeValues[throughputGrade])*throughputWeight
-	
+
+	total := float64(gradeValues[errorGrade])*errorWeight +
+		float64(gradeValues[responseGrade])*responseWeight +
+		float64(gradeValues[throughputGrade])*throughputWeight
+
 	maxTotal := 4.0 * (errorWeight + responseWeight + throughputWeight)
 	percentage := total / maxTotal
-	
+
 	switch {
 	case percentage >= 0.9:
 		return "A"
@@ -910,14 +910,14 @@ func generateTestAnalysis(result *RunResult) TestAnalysis {
 	analysis := TestAnalysis{
 		IssueCount: len(result.Issues),
 	}
-	
+
 	// Calculate success rate
 	if result.Summary.TotalRequests > 0 {
 		analysis.SuccessRate = float64(result.Summary.TotalRequests-result.Summary.FailedRequests) / float64(result.Summary.TotalRequests) * 100
 	} else {
 		analysis.SuccessRate = 0
 	}
-	
+
 	// Determine status and grade
 	if result.Success && result.ExitCode == 0 {
 		if analysis.SuccessRate == 100 && result.Performance.OverallGrade >= "B" {
@@ -942,114 +942,114 @@ func generateTestAnalysis(result *RunResult) TestAnalysis {
 		analysis.Description = "Test execution failed"
 		analysis.Severity = "critical"
 	}
-	
+
 	return analysis
 }
 
 // identifyTestIssues identifies specific issues from test results
 func identifyTestIssues(result *RunResult, options *RunOptions) []TestIssue {
 	var issues []TestIssue
-	
+
 	// Check for high error rate
 	if result.Summary.TotalRequests > 0 {
 		errorRate := float64(result.Summary.FailedRequests) / float64(result.Summary.TotalRequests) * 100
 		if errorRate > 5 {
 			issues = append(issues, TestIssue{
-				Type:      "error",
-				Severity:  "critical",
-				Message:   fmt.Sprintf("High error rate: %.1f%%", errorRate),
+				Type:       "error",
+				Severity:   "critical",
+				Message:    fmt.Sprintf("High error rate: %.1f%%", errorRate),
 				Suggestion: "Investigate failed requests. Check target server capacity and network connectivity.",
-				Value:     errorRate,
-				Threshold: 5.0,
-				Count:     result.Summary.FailedRequests,
+				Value:      errorRate,
+				Threshold:  5.0,
+				Count:      result.Summary.FailedRequests,
 			})
 		} else if errorRate > 1 {
 			issues = append(issues, TestIssue{
-				Type:      "error",
-				Severity:  "medium",
-				Message:   fmt.Sprintf("Elevated error rate: %.1f%%", errorRate),
+				Type:       "error",
+				Severity:   "medium",
+				Message:    fmt.Sprintf("Elevated error rate: %.1f%%", errorRate),
 				Suggestion: "Monitor error patterns and consider optimizing request handling.",
-				Value:     errorRate,
-				Threshold: 1.0,
-				Count:     result.Summary.FailedRequests,
+				Value:      errorRate,
+				Threshold:  1.0,
+				Count:      result.Summary.FailedRequests,
 			})
 		}
 	}
-	
+
 	// Check for slow response times
 	if result.Summary.AvgResponseTime > 1000 {
 		issues = append(issues, TestIssue{
-			Type:      "performance",
-			Severity:  "high",
-			Message:   fmt.Sprintf("Slow average response time: %.0fms", result.Summary.AvgResponseTime),
+			Type:       "performance",
+			Severity:   "high",
+			Message:    fmt.Sprintf("Slow average response time: %.0fms", result.Summary.AvgResponseTime),
 			Suggestion: "Optimize server performance, check database queries, or consider caching.",
-			Value:     result.Summary.AvgResponseTime,
-			Threshold: 500.0,
+			Value:      result.Summary.AvgResponseTime,
+			Threshold:  500.0,
 		})
 	} else if result.Summary.AvgResponseTime > 500 {
 		issues = append(issues, TestIssue{
-			Type:      "performance",
-			Severity:  "medium",
-			Message:   fmt.Sprintf("Response time above optimal: %.0fms", result.Summary.AvgResponseTime),
+			Type:       "performance",
+			Severity:   "medium",
+			Message:    fmt.Sprintf("Response time above optimal: %.0fms", result.Summary.AvgResponseTime),
 			Suggestion: "Consider performance optimizations to reduce response time.",
-			Value:     result.Summary.AvgResponseTime,
-			Threshold: 200.0,
+			Value:      result.Summary.AvgResponseTime,
+			Threshold:  200.0,
 		})
 	}
-	
+
 	// Check for very slow P95 response times
 	if result.Summary.P95ResponseTime > result.Summary.AvgResponseTime*2 {
 		issues = append(issues, TestIssue{
-			Type:      "performance",
-			Severity:  "medium",
-			Message:   "High response time variability",
+			Type:       "performance",
+			Severity:   "medium",
+			Message:    "High response time variability",
 			Suggestion: "Investigate outliers causing slow P95 times. Check for resource contention.",
-			Value:     result.Summary.P95ResponseTime,
-			Threshold: result.Summary.AvgResponseTime * 1.5,
+			Value:      result.Summary.P95ResponseTime,
+			Threshold:  result.Summary.AvgResponseTime * 1.5,
 		})
 	}
-	
+
 	// Check for low throughput
 	if result.Summary.RequestRate < 1 && result.Summary.TotalRequests > 10 {
 		issues = append(issues, TestIssue{
-			Type:      "performance",
-			Severity:  "medium",
-			Message:   "Very low throughput",
+			Type:       "performance",
+			Severity:   "medium",
+			Message:    "Very low throughput",
 			Suggestion: "Increase virtual users or reduce think time to achieve better throughput.",
-			Value:     result.Summary.RequestRate,
-			Threshold: 5.0,
+			Value:      result.Summary.RequestRate,
+			Threshold:  5.0,
 		})
 	}
-	
+
 	return issues
 }
 
 // generateRecommendations generates specific recommendations based on results
 func generateRecommendations(result *RunResult, options *RunOptions) []string {
 	var recommendations []string
-	
+
 	// Performance-based recommendations
 	if result.Performance.ResponseTime.Grade <= "C" {
-		recommendations = append(recommendations, 
+		recommendations = append(recommendations,
 			"Consider optimizing server response times",
 			"Use the 'search' tool with query 'performance optimization' for tips",
 		)
 	}
-	
+
 	if result.Performance.ErrorRate.Grade <= "C" {
 		recommendations = append(recommendations,
 			"Investigate and fix error patterns in your application",
 			"Add error handling and retry logic to your k6 script",
 		)
 	}
-	
+
 	if result.Performance.Throughput.Grade <= "C" {
 		recommendations = append(recommendations,
 			"Consider increasing virtual users for better load testing",
 			"Optimize your k6 script to reduce unnecessary delays",
 		)
 	}
-	
+
 	// Configuration-based recommendations
 	if options != nil && options.VUs == 1 && result.Summary.TotalRequests < 100 {
 		recommendations = append(recommendations,
@@ -1057,58 +1057,58 @@ func generateRecommendations(result *RunResult, options *RunOptions) []string {
 			"Use stages configuration for realistic load patterns",
 		)
 	}
-	
+
 	// General recommendations
 	recommendations = append(recommendations,
 		"Use the 'search' tool to find k6 best practices and examples",
 		"Consider adding checks and thresholds to your script",
 	)
-	
+
 	return removeDuplicateStrings(recommendations)
 }
 
 // generatePerformanceRecommendations generates performance-specific recommendations
 func generatePerformanceRecommendations(insights PerformanceInsights) []string {
 	var recommendations []string
-	
+
 	if insights.ResponseTime.Grade <= "C" {
 		recommendations = append(recommendations, "Optimize server response times for better user experience")
 	}
-	
+
 	if insights.ErrorRate.Grade <= "C" {
 		recommendations = append(recommendations, "Reduce error rate to improve reliability")
 	}
-	
+
 	if insights.Throughput.Grade <= "C" {
 		recommendations = append(recommendations, "Increase system throughput capacity")
 	}
-	
+
 	return recommendations
 }
 
 // identifyBottlenecks identifies performance bottlenecks
 func identifyBottlenecks(insights PerformanceInsights) []string {
 	var bottlenecks []string
-	
+
 	if insights.ResponseTime.Grade <= "D" {
 		bottlenecks = append(bottlenecks, "Slow response times indicate server or network bottlenecks")
 	}
-	
+
 	if insights.ErrorRate.Grade <= "D" {
 		bottlenecks = append(bottlenecks, "High error rate suggests system overload or configuration issues")
 	}
-	
+
 	if insights.Throughput.Grade <= "D" {
 		bottlenecks = append(bottlenecks, "Low throughput indicates capacity limitations")
 	}
-	
+
 	return bottlenecks
 }
 
 // generateOptimizations generates specific optimization suggestions
 func generateOptimizations(insights PerformanceInsights) []OptimizationSuggestion {
 	var optimizations []OptimizationSuggestion
-	
+
 	if insights.ResponseTime.Grade <= "C" {
 		optimizations = append(optimizations, OptimizationSuggestion{
 			Category:    "infrastructure",
@@ -1118,17 +1118,17 @@ func generateOptimizations(insights PerformanceInsights) []OptimizationSuggestio
 			Impact:      "Reduce average response time by 30-50%",
 		})
 	}
-	
+
 	if insights.ErrorRate.Grade <= "C" {
 		optimizations = append(optimizations, OptimizationSuggestion{
 			Category:    "configuration",
-			Priority:    "high", 
+			Priority:    "high",
 			Title:       "Reduce Error Rate",
 			Description: "Implement proper error handling, increase timeouts, or scale server capacity",
 			Impact:      "Improve reliability to 99%+ success rate",
 		})
 	}
-	
+
 	if insights.Throughput.Grade <= "C" {
 		optimizations = append(optimizations, OptimizationSuggestion{
 			Category:    "script",
@@ -1138,49 +1138,49 @@ func generateOptimizations(insights PerformanceInsights) []OptimizationSuggestio
 			Impact:      "Better stress testing and capacity planning",
 		})
 	}
-	
+
 	return optimizations
 }
 
 // generateRunNextSteps provides actionable next steps based on run results
 func generateRunNextSteps(result *RunResult) []string {
 	var steps []string
-	
+
 	if result.Success && result.Analysis.Grade >= "B" {
 		steps = append(steps, "Great results! Your application performed well under load")
-		
+
 		if len(result.Issues) > 0 {
 			steps = append(steps, "Address the minor issues found for even better performance")
 		}
-		
+
 		steps = append(steps,
 			"Consider increasing load to find your system's limits",
 			"Add more complex scenarios to your test script",
 		)
 	} else if result.Success {
 		steps = append(steps, "Test completed but found performance issues to address")
-		
+
 		if result.Analysis.Grade <= "D" {
 			steps = append(steps, "Focus on critical performance improvements first")
 		}
-		
+
 		steps = append(steps,
 			"Review the performance insights and optimization suggestions",
 			"Use the 'search' tool for specific optimization techniques",
 		)
 	} else {
 		steps = append(steps, "Fix test execution issues before analyzing performance")
-		
+
 		if result.ExitCode != 0 {
 			steps = append(steps, "Check k6 script syntax and target server availability")
 		}
 	}
-	
+
 	steps = append(steps,
 		"Use the 'search' tool for advanced k6 testing patterns",
 		"Consider setting up monitoring for ongoing performance tracking",
 	)
-	
+
 	return steps
 }
 
@@ -1188,14 +1188,14 @@ func generateRunNextSteps(result *RunResult) []string {
 func removeDuplicateStrings(slice []string) []string {
 	seen := make(map[string]bool)
 	result := []string{}
-	
+
 	for _, item := range slice {
 		if !seen[item] {
 			seen[item] = true
 			result = append(result, item)
 		}
 	}
-	
+
 	return result
 }
 
@@ -1204,7 +1204,7 @@ func addRunWorkflowIntegrationSuggestions(result *RunResult, options *RunOptions
 	if result == nil {
 		return
 	}
-	
+
 	// Add workflow suggestions based on run results
 	if result.Success && result.Analysis.Grade >= "B" {
 		// Successful run with good performance
@@ -1215,10 +1215,10 @@ func addRunWorkflowIntegrationSuggestions(result *RunResult, options *RunOptions
 			"  • Add more complex scenarios to your test suite",
 			"  • Implement continuous performance monitoring",
 		}
-		
+
 		// Insert at the beginning of next steps
 		result.NextSteps = append(workflowSuggestions, result.NextSteps...)
-		
+
 		// Add advanced testing recommendations
 		advancedRecommendations := []string{
 			"Try advanced k6 features: scenarios, checks, custom metrics",
@@ -1226,7 +1226,6 @@ func addRunWorkflowIntegrationSuggestions(result *RunResult, options *RunOptions
 			"Explore browser testing for frontend performance validation",
 		}
 		result.Recommendations = append(result.Recommendations, advancedRecommendations...)
-		
 	} else if result.Success && result.Analysis.Grade >= "C" {
 		// Successful run with moderate performance
 		workflowSuggestions := []string{
@@ -1236,9 +1235,8 @@ func addRunWorkflowIntegrationSuggestions(result *RunResult, options *RunOptions
 			"  • Re-run with same parameters after optimizations",
 			"  • Gradually increase load once performance improves",
 		}
-		
+
 		result.NextSteps = append(workflowSuggestions, result.NextSteps...)
-		
 	} else if result.Success {
 		// Successful run but poor performance
 		workflowSuggestions := []string{
@@ -1248,9 +1246,8 @@ func addRunWorkflowIntegrationSuggestions(result *RunResult, options *RunOptions
 			"  • Use 'validate' tool to check script optimizations",
 			"  • Re-test with reduced load until performance improves",
 		}
-		
+
 		result.NextSteps = append(workflowSuggestions, result.NextSteps...)
-		
 	} else {
 		// Failed run
 		workflowSuggestions := []string{
@@ -1259,10 +1256,10 @@ func addRunWorkflowIntegrationSuggestions(result *RunResult, options *RunOptions
 			"  • Verify target server availability and configuration",
 			"  • Start with minimal load (1 VU, 1 iteration) for debugging",
 		}
-		
+
 		result.NextSteps = append(workflowSuggestions, result.NextSteps...)
 	}
-	
+
 	// Add configuration-specific suggestions
 	if options != nil {
 		if options.VUs == 1 && result.Success {
@@ -1271,7 +1268,7 @@ func addRunWorkflowIntegrationSuggestions(result *RunResult, options *RunOptions
 				"Use the current configuration as baseline for performance comparison",
 			)
 		}
-		
+
 		if options.VUs >= 20 && result.Success && result.Analysis.Grade <= "C" {
 			result.Recommendations = append(result.Recommendations,
 				"High VU count revealed performance issues - optimize before scaling further",
@@ -1279,7 +1276,7 @@ func addRunWorkflowIntegrationSuggestions(result *RunResult, options *RunOptions
 			)
 		}
 	}
-	
+
 	// Add general workflow integration recommendations
 	generalWorkflow := []string{
 		"Iterative testing approach: validate → small load → optimize → scale → monitor",
@@ -1287,7 +1284,7 @@ func addRunWorkflowIntegrationSuggestions(result *RunResult, options *RunOptions
 		"Document your performance baselines for future comparison",
 	}
 	result.Recommendations = append(result.Recommendations, generalWorkflow...)
-	
+
 	// Remove duplicates
 	result.NextSteps = removeDuplicateStrings(result.NextSteps)
 	result.Recommendations = removeDuplicateStrings(result.Recommendations)

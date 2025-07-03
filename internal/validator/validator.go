@@ -888,7 +888,6 @@ func addWorkflowIntegrationSuggestions(result *ValidationResult) {
 			"Monitor response times and error rates during execution",
 		}
 		result.Recommendations = append(result.Recommendations, runRecommendations...)
-
 	} else if result.Valid && len(result.Issues) > 0 {
 		// Script is valid but has minor issues
 		result.NextSteps = append([]string{
