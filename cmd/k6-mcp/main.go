@@ -42,7 +42,7 @@ func main() {
 
 	// Register the validate tool
 	validateTool := mcp.NewTool(
-		"validate",
+		"validate_script",
 		mcp.WithDescription("Validate a k6 script by running it with minimal configuration (1 VU, 1 iteration). Returns detailed validation results with syntax errors, runtime issues, and actionable recommendations for fixing problems."),
 		mcp.WithString(
 			"script",
