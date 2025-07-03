@@ -55,7 +55,7 @@ func main() {
 
 	// Register the run tool
 	runTool := mcp.NewTool(
-		"run",
+		"run_test",
 		mcp.WithDescription("Run a k6 performance test with configurable parameters. Returns detailed execution results including performance metrics, failure analysis, and optimization recommendations."),
 		mcp.WithString(
 			"script",
