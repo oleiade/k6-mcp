@@ -1,8 +1,8 @@
 {
   "mcpServers": {
     "k6": {
-      "command": "k6-mcp",
-      "args": [],
+      "command": "go",
+      "args": ["run", "github.com/oleiade/k6-mcp/cmd/k6-mcp"],
       "env": { "LOG_LEVEL": "DEBUG", "LOG_FORMAT": "json" }
     }
   }
