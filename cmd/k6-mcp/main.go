@@ -293,26 +293,73 @@ func handleGenerateScript(ctx context.Context, request mcp.GetPromptRequest) (*m
 		return nil, fmt.Errorf("description parameter cannot be empty. Please provide a detailed description of the k6 script you want to generate")
 	}
 
-	// This is the core of your guidance.
+	// Enhanced prompt following 2024 best practices
 	promptText := fmt.Sprintf(`
-            You are an expert k6 performance testing engineer. Your task is to generate a high-quality k6 script based on the following user request:
+### ROLE & EXPERTISE
+You are a senior k6 performance testing engineer with deep expertise in:
+- Modern k6 features and JavaScript/TypeScript development
+- Performance testing methodologies and best practices
+- Load testing patterns, scenarios, and optimization techniques
+- k6 ecosystem tools and integrations
 
-            **User Request:**
-            %s
+### TASK OBJECTIVE
+Generate a production-ready k6 script that accurately implements the user's requirements while following industry best practices.
 
-            To ensure the quality and accuracy of the script, you must follow these steps precisely:
+### USER REQUEST
+%s
 
-            1.  **Consult the Documentation:** Before writing any code, use the "k6/search" tool to look up relevant functions and concepts based on the user's request. For example, if the user mentions "checking for a 200 status code," you should search for "k6 check status code."
+### IMPLEMENTATION WORKFLOW
+Follow these steps in order to ensure high-quality output:
 
-            2.  **Review Best Practices:** After your initial research, you must read the k6 best practices by accessing the "docs://k6/best_practices" resource.
+#### Step 1: Research & Discovery
+- Use the "k6/search" tool to research relevant k6 features and APIs for the user's request
+- Search for specific concepts mentioned (e.g., "HTTP requests", "authentication", "thresholds")
+- Gather implementation examples and syntax patterns
 
-            3.  **Write the Script:** Now, write the k6 script. It is IMPORTANT that your script MUST adhere to the best practices you just reviewed. The script should be well-commented to explain the logic.
+#### Step 2: Best Practices Review
+- Access the "docs://k6/best_practices" resource to review current guidelines
+- Focus on practices relevant to the user's specific use case
+- Note any security, performance, or maintainability considerations
 
-            4. **Validate the Script:** Validate the script using the "k6/validate" tool.
+#### Step 3: Script Development
+Create a k6 script that:
+- Follows the structure and patterns from the best practices guide
+- Uses modern k6 features appropriate for the task
+- Includes proper error handling and validation
+- Contains clear, explanatory comments for complex logic
+- Implements realistic test scenarios with appropriate think time
 
-            5. **Final Review:** Before presenting the script, double-check that you have correctly implemented the user's request and followed the best practices.
+#### Step 4: Quality Validation
+- Use the "k6/validate" tool to check script syntax and basic functionality
+- Verify the script addresses all requirements from the user's request
+- Ensure adherence to the best practices you reviewed
 
-			6. **Offer to run the script:** If the script is valid, offer to run it using the "k6/run" tool.
+#### Step 5: Final Verification
+Before presenting the script, confirm:
+- All user requirements are implemented correctly
+- The script follows k6 best practices and modern patterns
+- Code is well-documented and maintainable
+- Appropriate test configuration (VUs, duration, thresholds) is included
+
+#### Step 6: Execution Offer
+If validation succeeds, offer to run the script using the "k6/run" tool with:
+- Suggested test parameters based on the script's purpose
+- Explanation of what the test will validate
+- Expected outcomes and metrics to monitor
+
+### OUTPUT FORMAT
+Present your response in this structure:
+1. **Research Summary**: Brief overview of k6 features/patterns found
+2. **Best Practices Applied**: Key guidelines implemented in the script
+3. **Generated Script**: The complete k6 script with comments
+4. **Validation Results**: Output from the validation tool
+5. **Next Steps**: Offer to run the script with recommended parameters
+
+### SUCCESS CRITERIA
+- Script executes without syntax errors
+- All user requirements are addressed
+- Code follows documented best practices
+- Script is production-ready and maintainable
         `, description)
 
 	result := mcp.NewGetPromptResult(
