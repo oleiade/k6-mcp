@@ -63,18 +63,42 @@
 38. **Implement Constants:** Use constants for URLs, timeouts, and other configuration values.
 39. **Version Control Integration:** Structure scripts for version control with proper gitignore patterns.
 
+### Modern k6 Features & Protocols
+
+54. **WebSocket Testing:** Use the `k6/ws` module for real-time communication testing, including chat applications, live updates, and streaming services.
+55. **gRPC Testing:** Leverage gRPC protocol testing for microservices communication with protocol buffers (requires k6 with gRPC support).
+56. **HTTP/2 Support:** Take advantage of automatic HTTP/2 protocol upgrades for more realistic modern web application testing.
+57. **Native TypeScript Support:** Write k6 scripts directly in TypeScript with native support via esbuild integration - no compilation step required.
+58. **Modern JavaScript Runtime:** Leverage k6's Grafana Sobek JavaScript runtime for ES6+ features and modern JavaScript syntax.
+59. **Module System:** Use ES6 modules and k6's import system for better code organization and reusability.
+60. **Custom Metrics:** Create business-specific metrics beyond standard HTTP metrics to track KPIs relevant to your application.
+
 ### Browser Testing & End-to-End Testing
 
-40. **Use Browser Module for E2E Testing:** Leverage k6's browser module for comprehensive end-to-end website testing.
-41. **Choose the Right Tool:** Use browser testing for UI interactions, HTTP testing for API performance.
-42. **Implement Page Object Pattern:** Structure browser tests with page objects for maintainability and reusability.
-43. **Handle Asynchronous Operations:** Use proper waiting strategies for dynamic content and AJAX requests.
-44. **Optimize Browser Performance:** Minimize browser overhead while maintaining realistic user simulation.
-45. **Test Cross-Browser Compatibility:** Validate functionality across different browser engines when possible.
-46. **Handle Pop-ups and Dialogs:** Implement proper handling for alerts, confirmations, and modal dialogs.
-47. **Validate Visual Elements:** Check for element visibility, text content, and proper rendering.
-48. **Simulate Real User Interactions:** Include realistic mouse movements, typing speed, and navigation patterns.
-49. **Manage Browser Context:** Properly handle browser instances, pages, and cleanup in multi-user scenarios.
+40. **Choose the Right Testing Approach:** Use browser testing for UI interactions and frontend performance, HTTP testing for API performance and backend load testing.
+41. **Leverage Browser Module for E2E Testing:** Use k6's browser module for comprehensive end-to-end website testing that includes JavaScript execution and DOM interaction.
+42. **When to Use Browser Testing:**
+    - Testing user journeys that involve complex frontend interactions
+    - Validating client-side JavaScript functionality
+    - Measuring real user experience metrics (Core Web Vitals)
+    - Testing single-page applications (SPAs) with dynamic content
+    - Verifying cross-browser compatibility
+43. **When to Use HTTP Testing:**
+    - Pure API performance testing
+    - Backend load testing without frontend concerns
+    - High-volume load testing (HTTP is more resource-efficient)
+    - Testing microservices and REST/GraphQL APIs
+    - CI/CD pipeline integration where browser overhead isn't needed
+44. **Implement Page Object Pattern:** Structure browser tests with page objects for maintainability and reusability.
+45. **Handle Asynchronous Operations:** Use proper waiting strategies (`waitForSelector`, `waitForLoadState`) for dynamic content and AJAX requests.
+46. **Optimize Browser Performance:** Minimize browser overhead while maintaining realistic user simulation - consider headless mode for performance.
+47. **Test Cross-Browser Compatibility:** Validate functionality across different browser engines when possible (currently supports Chromium-based browsers).
+48. **Handle Pop-ups and Dialogs:** Implement proper handling for alerts, confirmations, and modal dialogs using browser event listeners.
+49. **Validate Visual Elements:** Check for element visibility, text content, and proper rendering using locators and assertions.
+50. **Simulate Real User Interactions:** Include realistic mouse movements, typing speed, and navigation patterns with appropriate `sleep()` calls.
+51. **Manage Browser Context:** Properly handle browser instances, pages, and cleanup in multi-user scenarios to prevent memory leaks.
+52. **Measure Frontend Performance:** Use browser testing to capture Core Web Vitals (LCP, FID, CLS) and other performance metrics.
+53. **Test Progressive Web Apps:** Use browser testing for PWA-specific features like service workers, offline functionality, and app-like behaviors.
 
 ### Script Examples
 
@@ -204,7 +228,7 @@ export function teardown(data) {
 
 #### Browser Testing Example
 ```javascript
-import { browser } from 'k6/experimental/browser';
+import { browser } from 'k6/browser';
 import { check, sleep } from 'k6';
 import { SharedArray } from 'k6/data';
 
@@ -220,6 +244,7 @@ export const options = {
       options: {
         browser: {
           type: 'chromium',
+          headless: true,
         },
       },
       vus: 3,
@@ -380,7 +405,7 @@ export default async function() {
 
 #### Browser Testing with Multiple User Scenarios
 ```javascript
-import { browser } from 'k6/experimental/browser';
+import { browser } from 'k6/browser';
 import { check, group, sleep } from 'k6';
 
 export const options = {
@@ -392,6 +417,7 @@ export const options = {
       options: {
         browser: {
           type: 'chromium',
+          headless: true,
         },
       },
       tags: { userType: 'admin' },
@@ -403,6 +429,7 @@ export const options = {
       options: {
         browser: {
           type: 'chromium',
+          headless: true,
         },
       },
       tags: { userType: 'regular' },

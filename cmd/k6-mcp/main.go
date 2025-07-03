@@ -126,6 +126,14 @@ func main() {
 		}, nil
 	})
 
+	generateScriptPrompt := mcp.NewPrompt(
+		"generate_script",
+		mcp.WithPromptDescription("Generate a k6 script based on the user's request."),
+		mcp.WithArgument("description", mcp.ArgumentDescription("The description of the script to generate.")),
+	)
+
+	s.AddPrompt(generateScriptPrompt, handleGenerateScript)
+
 	logger.Info("Starting MCP server on stdio")
 
 	if err := server.ServeStdio(s); err != nil {
@@ -251,6 +259,76 @@ func handleRun(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolR
 
 	// Return structured result
 	return mcp.NewToolResultText(string(resultJSON)), nil
+}
+
+// handleGenerateScript handles the generate_script prompt requests.
+func handleGenerateScript(ctx context.Context, request mcp.GetPromptRequest) (*mcp.GetPromptResult, error) {
+	// Add request correlation ID
+	requestID := uuid.New().String()
+	ctx = logging.ContextWithRequestID(ctx, requestID)
+	startTime := time.Now()
+
+	args := request.Params.Arguments
+
+	// Convert args to interface{} map for logging
+	logArgs := make(map[string]interface{})
+	for k, v := range args {
+		logArgs[k] = v
+	}
+
+	// Log request start
+	logging.RequestStart(ctx, "generate_script", logArgs)
+
+	// Extract description from arguments
+	description, exists := args["description"]
+	if !exists {
+		err := fmt.Errorf("missing required parameter: description")
+		logging.RequestEnd(ctx, "generate_script", false, time.Since(startTime), err)
+		return nil, fmt.Errorf("missing required parameter 'description'. Please provide a description of the k6 script you want to generate")
+	}
+
+	if description == "" {
+		err := fmt.Errorf("description parameter cannot be empty")
+		logging.RequestEnd(ctx, "generate_script", false, time.Since(startTime), err)
+		return nil, fmt.Errorf("description parameter cannot be empty. Please provide a detailed description of the k6 script you want to generate")
+	}
+
+	// This is the core of your guidance.
+	promptText := fmt.Sprintf(`
+            You are an expert k6 performance testing engineer. Your task is to generate a high-quality k6 script based on the following user request:
+
+            **User Request:**
+            %s
+
+            To ensure the quality and accuracy of the script, you must follow these steps precisely:
+
+            1.  **Consult the Documentation:** Before writing any code, use the "k6/search" tool to look up relevant functions and concepts based on the user's request. For example, if the user mentions "checking for a 200 status code," you should search for "k6 check status code."
+
+            2.  **Review Best Practices:** After your initial research, you must read the k6 best practices by accessing the "docs://k6/best_practices" resource.
+
+            3.  **Write the Script:** Now, write the k6 script. It is IMPORTANT that your script MUST adhere to the best practices you just reviewed. The script should be well-commented to explain the logic.
+
+            4. **Validate the Script:** Validate the script using the "k6/validate" tool.
+
+            5. **Final Review:** Before presenting the script, double-check that you have correctly implemented the user's request and followed the best practices.
+
+			6. **Offer to run the script:** If the script is valid, offer to run it using the "k6/run" tool.
+        `, description)
+
+	result := mcp.NewGetPromptResult(
+		"A k6 script",
+		[]mcp.PromptMessage{
+			mcp.NewPromptMessage(
+				mcp.RoleAssistant,
+				mcp.NewTextContent(promptText),
+			),
+		},
+	)
+
+	// Log request completion
+	logging.RequestEnd(ctx, "generate_script", true, time.Since(startTime), nil)
+
+	return result, nil
 }
 
 // parseRunOptions parses run options from the tool arguments.
