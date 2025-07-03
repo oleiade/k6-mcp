@@ -88,7 +88,7 @@ func main() {
 
 	// Register the search tool
 	searchTool := mcp.NewTool(
-		"search",
+		"search_documentation",
 		mcp.WithDescription("Search k6 documentation using semantic similarity. Use proactively when writing k6 scripts to ensure best practices, troubleshoot validation errors, find script examples and templates, learn k6 patterns, and discover performance testing techniques. Essential for avoiding common mistakes and following idiomatic k6 development workflows."),
 		mcp.WithString(
 			"query",
