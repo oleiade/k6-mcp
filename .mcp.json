@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "k6": {
+      "command": "k6-mcp",
+      "args": [],
+      "env": { "LOG_LEVEL": "DEBUG", "LOG_FORMAT": "json" }
+    }
+  }
+}
