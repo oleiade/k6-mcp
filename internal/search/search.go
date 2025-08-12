@@ -1,65 +1,54 @@
-// Package search provides k6 documentation search functionality using embeddings.
 package search
 
-import (
-	"context"
-	"io"
-)
+import "context"
 
-// Result represents a search result from the documentation.
-type Result struct {
-	Content  string            `json:"content"`
-	Metadata map[string]string `json:"metadata,omitempty"`
-	Score    float32           `json:"score,omitempty"`
-	Source   string            `json:"source,omitempty"`
-}
-
-// Options configures search behavior.
-type Options struct {
-	MaxResults     int    `json:"max_results"`
-	CollectionName string `json:"collection_name"`
-}
-
-// Search defines the interface for documentation search implementations.
+// Search is the interface that wraps the Search method.
+//
+// It is used to search for documents in the index.
 type Search interface {
-	// Search searches the documentation for content similar to the query.
-	Search(ctx context.Context, query string) ([]Result, error)
-	
-	// Close implements io.Closer to release resources.
-	io.Closer
+	Search(ctx context.Context, query string, options Options) ([]Result, error)
 }
 
-const (
-	defaultMaxResults     = 5
-	defaultCollectionName = "k6_docs"
-)
+// Result is the result of a search query.
+//
+// It contains the title, content, and path of the document.
+// The path is the relative path to the document from the root of the index.
+// The content is the content of the document.
+// The title is the title of the document.
+type Result struct {
+	// The title of the document.
+	Title string `json:"title"`
+
+	// The content of the document.
+	Content string `json:"content"`
+
+	// The path of the document. Relative to the index.
+	Path string `json:"path"`
+
+	// Metadata (optional) is a map of key-value pairs containing additional information related to the document.
+	Metadata map[string]string `json:"metadata"`
+
+	// Source (optional) is the original source of the result being returned
+	Source string `json:"source"`
+
+	// Rank represents the scoring or relevance of the document in the context of a search result.
+	Rank float64 `json:"rank"`
+}
+
+// Options is the options for a search query.
+//
+// It contains the maximum number of results to return.
+type Options struct {
+	MaxResults int `json:"max_results"`
+}
 
 // DefaultOptions returns default search configuration.
-func DefaultOptions() *Options {
-	return &Options{
-		MaxResults:     defaultMaxResults,
-		CollectionName: defaultCollectionName,
+func DefaultOptions() Options {
+	return Options{
+		MaxResults: defaultMaxResults,
 	}
 }
-
-// BackendType represents the type of search backend to use.
-type BackendType string
 
 const (
-	// BackendChroma represents ChromaDB backend.
-	BackendChroma BackendType = "chroma"
+	defaultMaxResults = 10
 )
-
-// NewSearch creates a new search client based on the backend type.
-func NewSearch(backend BackendType, options *Options) (Search, error) {
-	if options == nil {
-		options = DefaultOptions()
-	}
-	
-	switch backend {
-	case BackendChroma:
-		return NewChromaSearch(options)
-	default:
-		return NewChromaSearch(options) // Default to Chroma for now
-	}
-}

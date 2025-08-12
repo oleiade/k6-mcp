@@ -34,6 +34,8 @@ go.work.sum
 
 # Build artifacts
 ./k6-mcp
+./indexer
+dist/
 
 # Ignore milvus docker volume data
 volumes/

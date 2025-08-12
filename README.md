@@ -1,12 +1,12 @@
 # k6-mcp
 
-An experimental MCP (Model Context Protocol) server for k6, built in Go. This server provides comprehensive k6 performance testing capabilities through the MCP protocol, including script validation, test execution, documentation search, and intelligent script generation.
+An **experimental** MCP (Model Context Protocol) server for k6, built in Go. It provides script validation, test execution, fast full‑text documentation search backed by an embedded SQLite FTS5 index, and intelligent script generation.
 
 ## Features
 
 - **Script Validation**: Validates k6 scripts by executing them with minimal configuration (1 VU, 1 iteration)
 - **Test Execution**: Runs k6 performance tests with configurable parameters (VUs, duration, stages, options)
-- **Documentation Search**: Semantic search through k6 documentation using vector database
+- **Documentation Search (default)**: Fast full‑text search via SQLite FTS5 over the official k6 docs (embedded index)
 - **Script Generation**: AI-powered k6 script generation with best practices and templates
 - **Best Practices Resources**: Access to comprehensive k6 scripting guidelines and patterns
 - **Security**: Comprehensive security measures including input size limits, dangerous pattern detection, and secure temporary file handling
@@ -15,40 +15,35 @@ An experimental MCP (Model Context Protocol) server for k6, built in Go. This se
 
 ### Prerequisites
 
-Before using k6-mcp, ensure you have the following installed:
+Install the following:
 
 - **Go 1.24.4+**: For building and running the MCP server
 - **k6**: Must be installed and available in PATH for script execution
-- **Docker**: For running the vector database (required for search functionality)
 - **Just**: Command runner for development tasks (recommended)
 
-Install `just`, and `uv` for the best experience:
+Install `just`:
 ```bash
 # Just gives access to management commands for the project 
 brew install just
-
-# UV is used to facilitate the execution and requirements management
-# of our python scripts
-brew install uv
 ```
 
 ### Quick Setup
 
-1. **Clone the repository** (with submodules for k6 documentation):
+1. **Clone the repository**:
    ```bash
-   git clone --recursive https://github.com/oleiade/k6-mcp
+   git clone https://github.com/oleiade/k6-mcp
    cd k6-mcp
    ```
 
-2. **Initialize the project** (starts ChromaDB and ingests k6 documentation):
+2. **Install the k6 MCP server** (generates the documentation index database, and installs `k6-mcp`):
    ```bash
-   just initialize
+   just install
    ```
 
-3. **Install the MCP server**:
-   ```bash
-   go install github.com/oleiade/k6-mcp/cmd/k6-mcp@main
-   ```
+Alternatively, to run without installing system‑wide:
+```bash
+just run
+```
 
 ### Editor Integration
 
@@ -80,6 +75,17 @@ To use this MCP server with Cursor IDE:
    - Search k6 documentation
    - Generate k6 scripts from requirements
 
+#### Claude Code
+
+For Claude Code, use the following command to add the k6 MCP server to your configuration:
+
+```bash
+claude mcp add --scope=user --transport=stdio k6 k6-mcp
+```
+
+Note that this will add the k6 MCP server to your claude code user configuration. If you with to limit the perimeter of the tool to your project, set the scope option to `local` instead. 
+
+
 #### Claude Desktop
 
 For Claude Desktop, add the following to your MCP configuration:
@@ -98,70 +104,43 @@ For Claude Desktop, add the following to your MCP configuration:
 
 ## Available Tools
 
-### validate
+### validate_script
 
-Validates k6 scripts by executing them with minimal configuration (1 VU, 1 iteration).
+Validate a k6 script by running it with minimal configuration (1 VU, 1 iteration).
 
-**Parameters:**
-- `script` (string, required): The k6 script content to validate (JavaScript/TypeScript)
+Parameters:
+- `script` (string, required)
 
-**Returns:**
-- `valid` (boolean): Whether the script is valid
-- `exit_code` (integer): k6 exit code
-- `stdout` (string): Standard output from k6
-- `stderr` (string): Standard error from k6  
-- `error` (string): Error message if validation failed
-- `duration` (string): Time taken for validation
+Returns: `valid`, `exit_code`, `stdout`, `stderr`, `error`, `duration`
 
-### run
+### run_test
 
-Runs k6 performance tests with configurable parameters for comprehensive load testing.
+Run k6 performance tests with configurable parameters.
 
-**Parameters:**
-- `script` (string, required): The k6 script content to run (JavaScript/TypeScript)
-- `vus` (number, optional): Number of virtual users (default: 1, max: 50)
-- `duration` (string, optional): Test duration (default: '30s', max: '5m')
-- `iterations` (number, optional): Number of iterations per VU (overrides duration)
-- `stages` (object, optional): Load profile stages for ramping (array of {duration, target})
-- `options` (object, optional): Additional k6 options as JSON object
+Parameters:
+- `script` (string, required)
+- `vus` (number, optional)
+- `duration` (string, optional)
+- `iterations` (number, optional)
+- `stages` (object, optional)
+- `options` (object, optional)
 
-**Returns:**
-- `success` (boolean): Whether the test completed successfully
-- `exit_code` (integer): k6 exit code
-- `stdout` (string): Standard output from k6
-- `stderr` (string): Standard error from k6
-- `error` (string): Error message if test failed
-- `duration` (string): Time taken for test execution
-- `metrics` (object): Raw k6 metrics data
-- `summary` (object): Test summary with key performance metrics:
-  - `total_requests` (integer): Total HTTP requests made
-  - `failed_requests` (integer): Number of failed requests
-  - `avg_response_time_ms` (number): Average response time in milliseconds
-  - `p95_response_time_ms` (number): 95th percentile response time in milliseconds
-  - `request_rate_per_second` (number): Request rate per second
-  - `data_received` (string): Amount of data received
-  - `data_sent` (string): Amount of data sent
+Returns: `success`, `exit_code`, `stdout`, `stderr`, `error`, `duration`, `metrics`, `summary`
 
-### search
+### search_documentation
 
-Searches k6 documentation using semantic similarity via ChromaDB vector database.
+Full‑text search over the embedded k6 docs index (SQLite FTS5).
 
-**Parameters:**
-- `query` (string, required): The search query to find relevant k6 documentation
-- `max_results` (number, optional): Maximum number of results to return (default: 5, max: 20)
+Parameters:
+- `keywords` (string, required): FTS5 query string
+- `max_results` (number, optional, default 10, max 20)
 
-**Returns:**
-- `query` (string): The original search query
-- `results` (array): Array of search results, each containing:
-  - `content` (string): Documentation content
-  - `metadata` (object): Document metadata
-  - `score` (number): Similarity score (0-1, higher is more relevant)
-  - `source` (string): Source identifier
-- `count` (integer): Number of results returned
+FTS5 tips:
+- Space‑separated words imply AND: `checks thresholds` → `checks AND thresholds`
+- Quotes for exact phrases: `"load testing"`
+- Operators supported: `AND`, `OR`, `NEAR`, parentheses, prefix `http*`
 
-**Prerequisites:**
-- ChromaDB must be running (`just chroma`)
-- k6 documentation must be ingested (`just ingest`)
+Returns an array of results with `title`, `content`, `path`.
 
 ## Available Resources
 
@@ -193,25 +172,27 @@ AI-powered k6 script generation with structured workflow:
 
 ### Just Commands (Recommended)
 
-The project uses `just` for common development tasks:
-
 ```bash
-# Initialize submodules and start services
-just initialize
-
-# Run the MCP server
+# Build and run the MCP server (generates the SQLite index if missing)
 just run
 
-# Start ChromaDB vector database
+# Build binary locally (generates the SQLite index if missing)
+just build
+
+# Install into your Go bin (generates the SQLite index if missing)
+just install
+
+# Optimized release build (stripped, reproducible paths)
+just release
+
+# (Re)generate the embedded SQLite docs index
+just index
+
+# Optional (experimental embeddings): start vector DBs / helpers
 just chroma
-
-# Ingest k6 documentation into vector database
+just milvus
 just ingest
-
-# Verify database ingestion
 just verify
-
-# Reset ChromaDB (clean slate)
 just reset
 ```
 
@@ -220,40 +201,43 @@ just reset
 If you prefer not to use `just`:
 
 ```bash
-# Build the project
-go build -o k6-mcp ./cmd/k6-mcp
+# 1) Generate the SQLite FTS5 docs index (required for build/run because it is embedded)
+go run -tags fts5 ./cmd/indexer
 
-# Run the MCP server
-go run ./cmd/k6-mcp
+# 2) Start the MCP server
+go run -tags fts5 ./cmd/k6-mcp
+
+# Build a local binary
+go build -tags fts5 -o k6-mcp ./cmd/k6-mcp
+
+# Release‑style build (macOS example)
+CGO_ENABLED=1 go build -tags 'fts5 sqlite_fts5' -trimpath -ldflags '-s -w' -o k6-mcp ./cmd/k6-mcp
 
 # Run tests
 go test ./...
 
-# Run linter
+# Lint
 golangci-lint run
-
-# Start ChromaDB with Docker
-docker compose -f docker-compose.chroma.yml up -d
-
-# Ingest documentation
-cd python-services && ./ingest.py
 ```
 
 ### Project Structure
 
 ```
-├── cmd/k6-mcp/                # MCP server entry point
-├── internal/                  # Internal packages
+├── cmd/
+│   ├── k6-mcp/               # MCP server entry point
+│   └── indexer/              # Builds the SQLite FTS5 docs index into dist/index.db
+├── dist/
+│   └── index.db              # Embedded SQLite FTS5 index (generated)
+├── internal/
 │   ├── runner/               # Test execution engine
-│   ├── search/               # Documentation search
+│   ├── search/               # Full‑text search and indexer
 │   ├── security/             # Security utilities
 │   └── validator/            # Script validation
-├── k6-docs/                  # Git submodule: k6 documentation
 ├── resources/                # MCP resources
-│   ├── practices/           # Best practices guide
-│   └── prompts/             # AI prompt templates
-├── python-services/          # Python utilities for ingestion
-└── k6/scripts/              # Generated k6 scripts
+│   ├── practices/            # Best practices guide
+│   └── prompts/              # AI prompt templates
+├── python-services/          # Optional utilities (embeddings, verification)
+└── k6/scripts/               # Generated k6 scripts
 ```
 
 ## Security
@@ -307,22 +291,24 @@ The MCP server implements comprehensive security measures:
 
 ## Troubleshooting
 
-### Search Not Working
+### Build fails with “dist/index.db: no matching files”
+Generate the docs index first:
+```bash
+just index
+```
 
-If search functionality isn't working:
-1. Ensure ChromaDB is running: `just chroma`
-2. Verify documentation is ingested: `just ingest`
-3. Check ingestion status: `just verify`
+### Search returns no results
+- Ensure the index exists: `ls dist/index.db`
+- Rebuild the index: `just index`
+- Try simpler queries, or quote phrases: `"load testing"`
 
 ### MCP Server Not Found
-
 If your editor can't find the k6-mcp server:
-1. Ensure it's installed: `go install github.com/oleiade/k6-mcp/cmd/k6-mcp@main`
+1. Ensure it's installed: `just install`
 2. Check your editor's MCP configuration
 3. Verify the server starts: `k6-mcp` (should show MCP server output)
 
 ### Test Execution Failures
-
 If k6 tests fail to execute:
 1. Verify k6 is installed: `k6 version`
 2. Check script syntax with the validate tool first
