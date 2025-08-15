@@ -42,3 +42,6 @@ volumes/
 
 # Python files
 *.pyc
+
+# Ignore local test files
+scripts/
