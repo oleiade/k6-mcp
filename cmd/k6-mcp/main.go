@@ -9,8 +9,10 @@ import (
 	_ "embed"
 	"encoding/json"
 	"fmt"
+	"io/fs"
 	"log/slog"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -18,6 +20,7 @@ import (
 	"github.com/mark3labs/mcp-go/server"
 
 	k6mcp "github.com/oleiade/k6-mcp"
+	"github.com/oleiade/k6-mcp/internal"
 	"github.com/oleiade/k6-mcp/internal/handlers"
 	"github.com/oleiade/k6-mcp/internal/logging"
 	"github.com/oleiade/k6-mcp/internal/runner"
@@ -57,6 +60,7 @@ func main() {
 
 	// Register resources
 	registerBestPracticesResource(s)
+	registerTypeDefinitionsResource(s)
 
 	// Register prompts
 	registerGenerateScriptPrompt(s, handlers.NewScriptGenerator())
@@ -161,6 +165,41 @@ func registerBestPracticesResource(s *server.MCPServer) {
 	})
 }
 
+func registerTypeDefinitionsResource(s *server.MCPServer) {
+	_ = fs.WalkDir(k6mcp.TypeDefinitions, ".", func(path string, d fs.DirEntry, err error) error {
+		if !d.IsDir() && strings.HasSuffix(path, internal.DistDTSFileSuffix) {
+			bytes, err := k6mcp.TypeDefinitions.ReadFile(path)
+			if err != nil {
+				return err
+			}
+
+			relPath := strings.TrimPrefix(path, internal.DefinitionsPath)
+			uri := "types://k6/" + relPath
+			displayName := relPath
+
+			fileBytes := bytes
+			fileURI := uri
+			resource := mcp.NewResource(
+				fileURI,
+				displayName,
+				mcp.WithResourceDescription("Provides type definitions for k6."),
+				mcp.WithMIMEType("application/json"),
+			)
+
+			s.AddResource(resource, func(ctx context.Context, request mcp.ReadResourceRequest) ([]mcp.ResourceContents, error) {
+				return []mcp.ResourceContents{
+					mcp.TextResourceContents{
+						URI:      fileURI,
+						MIMEType: "application/json",
+						Text:     string(fileBytes),
+					},
+				}, nil
+			})
+		}
+		return nil
+	})
+}
+
 func registerGenerateScriptPrompt(s *server.MCPServer, h handlers.PromptHandler) {
 	generateScriptPrompt := mcp.NewPrompt(
 		"generate_script",
@@ -223,64 +262,6 @@ func handleValidate(ctx context.Context, request mcp.CallToolRequest) (*mcp.Call
 	// Return structured result
 	return mcp.NewToolResultText(string(resultJSON)), nil
 }
-
-//// handleGenerateScript handles the generate_script prompt requests.
-//func handleGenerateScript(ctx context.Context, request mcp.GetPromptRequest) (*mcp.GetPromptResult, error) {
-//	// Add request correlation ID
-//	requestID := uuid.New().String()
-//	ctx = logging.ContextWithRequestID(ctx, requestID)
-//	startTime := time.Now()
-//
-//	args := request.Params.Arguments
-//
-//	// Convert args to interface{} map for logging
-//	logArgs := make(map[string]interface{})
-//	for k, v := range args {
-//		logArgs[k] = v
-//	}
-//
-//	// Log request start
-//	logging.RequestStart(ctx, "generate_script", logArgs)
-//
-//	// Extract description from arguments
-//	description, exists := args["description"]
-//	if !exists {
-//		err := fmt.Errorf("missing required parameter: description")
-//		logging.RequestEnd(ctx, "generate_script", false, time.Since(startTime), err)
-//		return nil, fmt.Errorf("missing required parameter 'description'. Please provide a description of the k6 script you want to generate")
-//	}
-//
-//	if description == "" {
-//		err := fmt.Errorf("description parameter cannot be empty")
-//		logging.RequestEnd(ctx, "generate_script", false, time.Since(startTime), err)
-//		return nil, fmt.Errorf("description parameter cannot be empty. Please provide a detailed description of the k6 script you want to generate")
-//	}
-//
-//	// Load prompt template from file or embedded content
-//	templateContent, err := loadPromptTemplate("resources/prompts/generate_script.md", generateScriptTemplate)
-//	if err != nil {
-//		logging.RequestEnd(ctx, "generate_script", false, time.Since(startTime), err)
-//		return nil, fmt.Errorf("failed to load prompt template: %w", err)
-//	}
-//
-//	// Replace template variables
-//	promptText := strings.Replace(templateContent, "{{.Description}}", description, 1)
-//
-//	result := mcp.NewGetPromptResult(
-//		"A k6 script",
-//		[]mcp.PromptMessage{
-//			mcp.NewPromptMessage(
-//				mcp.RoleAssistant,
-//				mcp.NewTextContent(promptText),
-//			),
-//		},
-//	)
-//
-//	// Log request completion
-//	logging.RequestEnd(ctx, "generate_script", true, time.Since(startTime), nil)
-//
-//	return result, nil
-//}
 
 // getPresetConfigurations returns predefined test configurations
 func getPresetConfigurations() map[string]runner.RunOptions {
