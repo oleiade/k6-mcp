@@ -146,9 +146,9 @@ func registerBestPracticesResource(s *server.MCPServer) {
 	)
 
 	s.AddResource(bestPracticesResource, func(ctx context.Context, request mcp.ReadResourceRequest) ([]mcp.ResourceContents, error) {
-		content, err := os.ReadFile("resources/practices/PRACTICES.md")
+		content, err := k6mcp.Resources.ReadFile("resources/practices/PRACTICES.md")
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to read embedded best practices resource: %w", err)
 		}
 
 		return []mcp.ResourceContents{

@@ -1,6 +1,12 @@
 package k6mcp
 
-import _ "embed"
+import (
+	"embed"
+	_ "embed"
+)
 
 //go:embed dist/index.db
 var EmbeddedDB []byte
+
+//go:embed resources/**
+var Resources embed.FS

@@ -4,12 +4,13 @@ import (
 	"context"
 	_ "embed"
 	"fmt"
-	"github.com/google/uuid"
-	"github.com/mark3labs/mcp-go/mcp"
-	"github.com/oleiade/k6-mcp/internal/logging"
-	"os"
 	"strings"
 	"time"
+
+	"github.com/google/uuid"
+	"github.com/mark3labs/mcp-go/mcp"
+	k6mcp "github.com/oleiade/k6-mcp"
+	"github.com/oleiade/k6-mcp/internal/logging"
 )
 
 //go:embed templates/generate_script.md
@@ -54,15 +55,15 @@ func (s ScriptGenerator) Handle(ctx context.Context, request mcp.GetPromptReques
 		return nil, fmt.Errorf("description parameter cannot be empty. Please provide a detailed description of the k6 script you want to generate")
 	}
 
-	// Load prompt template from file or embedded content
-	templateContent, err := loadPromptTemplate("resources/prompts/generate_script.md", generateScriptTemplate)
+	// Load prompt template from embedded content
+	templateContent, err := k6mcp.Resources.ReadFile("resources/prompts/generate_script.md")
 	if err != nil {
 		logging.RequestEnd(ctx, "generate_script", false, time.Since(startTime), err)
-		return nil, fmt.Errorf("failed to load prompt template: %w", err)
+		return nil, fmt.Errorf("failed to read embedded prompt template: %w", err)
 	}
 
 	// Replace template variables
-	promptText := strings.Replace(templateContent, "{{.Description}}", description, 1)
+	promptText := strings.Replace(string(templateContent), "{{.Description}}", description, 1)
 
 	result := mcp.NewGetPromptResult(
 		"A k6 script",
@@ -78,19 +79,4 @@ func (s ScriptGenerator) Handle(ctx context.Context, request mcp.GetPromptReques
 	logging.RequestEnd(ctx, "generate_script", true, time.Since(startTime), nil)
 
 	return result, nil
-}
-
-// loadPromptTemplate loads the prompt template with filesystem fallback
-func loadPromptTemplate(templatePath string, embeddedTemplate string) (string, error) {
-	// Try to load from filesystem first (for development)
-	if content, err := os.ReadFile(templatePath); err == nil {
-		return string(content), nil
-	}
-
-	// Fallback to the embedded template
-	if embeddedTemplate != "" {
-		return embeddedTemplate, nil
-	}
-
-	return "", fmt.Errorf("template not found: %s", templatePath)
 }
