@@ -13,9 +13,6 @@ import (
 	"github.com/oleiade/k6-mcp/internal/logging"
 )
 
-//go:embed templates/generate_script.md
-var generateScriptTemplate string
-
 type ScriptGenerator struct{}
 
 var _ PromptHandler = &ScriptGenerator{}

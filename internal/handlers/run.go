@@ -4,13 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/google/uuid"
-	"github.com/mark3labs/mcp-go/mcp"
-	"github.com/oleiade/k6-mcp/internal/logging"
-	"github.com/oleiade/k6-mcp/internal/runner"
 	"log/slog"
 	"strings"
-	"time"
+
+	"github.com/mark3labs/mcp-go/mcp"
+	"github.com/oleiade/k6-mcp/internal/runner"
 )
 
 type RunHandler struct{}
@@ -20,28 +18,16 @@ func NewRunHandler() *RunHandler {
 }
 
 func (r RunHandler) Handle(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	// Add request correlation ID
-	requestID := uuid.New().String()
-	ctx = logging.ContextWithRequestID(ctx, requestID)
-	startTime := time.Now()
-
 	args := request.GetArguments()
-
-	// Log request start
-	logging.RequestStart(ctx, "run", args)
 
 	// Extract script content from arguments
 	scriptValue, exists := args["script"]
 	if !exists {
-		err := fmt.Errorf("missing required parameter: script")
-		logging.RequestEnd(ctx, "run", false, time.Since(startTime), err)
 		return mcp.NewToolResultError("Missing required parameter 'script'. Please provide your k6 script content as a string. Tip: Use the 'validate' tool first to check your script before running."), nil
 	}
 
 	script, ok := scriptValue.(string)
 	if !ok {
-		err := fmt.Errorf("script parameter must be a string")
-		logging.RequestEnd(ctx, "run", false, time.Since(startTime), err)
 		return mcp.NewToolResultError("Parameter 'script' must be a string containing your k6 script code. Received: " + fmt.Sprintf("%T", scriptValue)), nil
 	}
 
@@ -50,35 +36,33 @@ func (r RunHandler) Handle(ctx context.Context, request mcp.CallToolRequest) (*m
 	if err != nil {
 		// Include parameter suggestions in error message
 		suggestions := suggestParameterImprovements(args)
-		suggestionText := ""
-		if len(suggestions) > 0 {
-			suggestionText = " Suggestions: " + strings.Join(suggestions[:min(2, len(suggestions))], "; ")
+		n := 2
+		if len(suggestions) < n {
+			n = len(suggestions)
 		}
-		logging.RequestEnd(ctx, "run", false, time.Since(startTime), err)
+		suggestionText := ""
+		if n > 0 {
+			suggestionText = " Suggestions: " + strings.Join(suggestions[:n], "; ")
+		}
 		return mcp.NewToolResultError(fmt.Sprintf("Invalid parameters: %v. Check parameter types and ranges.%s Use the 'search' tool with query 'run options' for more examples.", err, suggestionText)), nil
 	}
 
 	// Run the k6 test
-	result, err := runner.RunK6Test(ctx, script, options)
-	if err != nil {
-		logging.WithContext(ctx).Error("Run processing error",
-			slog.String("error", err.Error()),
-			slog.String("error_type", "run_error"),
-		)
-		// Return the run result even if there was an error
-		// The result will contain error details for the client
+	result, runErr := runner.RunK6Test(ctx, script, options)
+	if runErr != nil {
+		// Return the run result even if there was an error; the result will contain details
 	}
 
 	// Convert result to JSON for structured response
 	resultJSON, err := json.MarshalIndent(result, "", "  ")
 	if err != nil {
-		logging.RequestEnd(ctx, "run", false, time.Since(startTime), err)
 		return mcp.NewToolResultError("failed to serialize run result"), err
 	}
 
-	// Log request completion
-	success := result != nil && result.Success
-	logging.RequestEnd(ctx, "run", success, time.Since(startTime), nil)
+	// Include key outcome fields in logs (using slog directly to avoid dependency on logging helpers here)
+	slog.InfoContext(ctx, "run completed",
+		slog.Bool("success", result != nil && result.Success),
+	)
 
 	// Return structured result
 	return mcp.NewToolResultText(string(resultJSON)), nil

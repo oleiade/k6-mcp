@@ -51,16 +51,16 @@ func main() {
 	)
 
 	// Register tools
-	registerRunTool(s, handlers.NewRunHandler())
-	registerDocumentationTools(s, handlers.NewFullTextSearchHandler(db))
-	registerValidationTool(s, handlers.NewValidationHandler())
+	registerRunTool(s, handlers.WithToolMiddleware("run", handlers.NewRunHandler()))
+	registerDocumentationTools(s, handlers.WithToolMiddleware("search", handlers.NewFullTextSearchHandler(db)))
+	registerValidationTool(s, handlers.WithToolMiddleware("validate", handlers.NewValidationHandler()))
 
 	// Register resources
 	registerBestPracticesResource(s)
 	registerTypeDefinitionsResource(s)
 
 	// Register prompts
-	registerGenerateScriptPrompt(s, handlers.NewScriptGenerator())
+	registerGenerateScriptPrompt(s, handlers.WithPromptMiddleware("generate_script", handlers.NewScriptGenerator()))
 
 	logger.Info("Starting MCP server on stdio")
 	if err := server.ServeStdio(s); err != nil {
