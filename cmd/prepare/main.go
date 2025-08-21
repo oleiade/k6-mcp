@@ -28,6 +28,7 @@ func main() {
 	var (
 		indexOnly   = flag.Bool("index-only", false, "Only perform documentation indexing")
 		collectOnly = flag.Bool("collect-only", false, "Only collect type definitions")
+		recreateDB  = flag.Bool("recreate-db", true, "Drop and recreate the FTS5 table before indexing")
 	)
 	flag.Parse()
 
@@ -47,7 +48,7 @@ func main() {
 
 	if runIndex {
 		log.Println("Starting documentation indexing...")
-		if err := runIndexer(workDir); err != nil {
+		if err := runIndexer(workDir, *recreateDB); err != nil {
 			log.Fatalf("Documentation indexing failed: %v", err)
 		}
 		log.Println("Documentation indexing completed successfully")
@@ -65,7 +66,7 @@ func main() {
 }
 
 // runIndexer performs the documentation indexing operation
-func runIndexer(workDir string) error {
+func runIndexer(workDir string, recreate bool) error {
 	const (
 		k6DocsRepo     = "https://github.com/grafana/k6-docs.git"
 		docsSourcePath = "docs/sources/k6"
@@ -105,7 +106,7 @@ func runIndexer(workDir string) error {
 	databasePath := filepath.Join(distPath, databaseName)
 	log.Printf("Generating SQLite database at: %s", databasePath)
 
-	db, err := search.InitSQLiteDB(databasePath)
+	db, err := search.InitSQLiteDB(databasePath, recreate)
 	if err != nil {
 		return fmt.Errorf("failed to initialize SQLite database: %w", err)
 	}

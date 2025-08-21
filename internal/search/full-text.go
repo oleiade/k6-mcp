@@ -23,10 +23,10 @@ func (s *FullTextSearch) Search(ctx context.Context, query string, opts Options)
 
 	rows, err := s.db.QueryContext(ctx, `
         SELECT title, content, path
-        FROM chunks
-        WHERE chunks MATCH ?
-        ORDER BY bm25(chunks, 3.0, 1.0, 0.1)
-        LIMIT ?`, processedQuery, opts.MaxResults)
+        FROM documentation
+        WHERE documentation MATCH ?
+        ORDER BY bm25(documentation, ?, ?, ?)
+        LIMIT ?`, processedQuery, BM25WeightTitle, BM25WeightContent, BM25WeightPath, opts.MaxResults)
 	if err != nil {
 		return nil, err
 	}

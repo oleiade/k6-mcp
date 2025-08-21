@@ -57,7 +57,7 @@ func (i *SQLiteIndexer) IndexDirectory(docsPath string) (int, error) {
 }
 
 func (i *SQLiteIndexer) insertChunk(c Result) error {
-	_, err := i.db.Exec(`INSERT INTO chunks (title, content, path) VALUES (?, ?, ?)`,
+	_, err := i.db.Exec(`INSERT INTO documentation (title, content, path) VALUES (?, ?, ?)`,
 		c.Title, c.Content, c.Path)
 	return err
 }

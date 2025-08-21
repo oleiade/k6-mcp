@@ -52,3 +52,12 @@ func DefaultOptions() Options {
 const (
 	defaultMaxResults = 10
 )
+
+// BM25 weighting coefficients used to score FTS5 rows.
+// These values prioritize matches in the title, then content, then path.
+// Tune cautiously: large skews can drown out relevant content.
+const (
+	BM25WeightTitle   = 3.0
+	BM25WeightContent = 1.0
+	BM25WeightPath    = 0.1
+)
