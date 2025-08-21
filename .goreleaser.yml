@@ -1,0 +1,79 @@
+# GoReleaser configuration for k6-mcp
+# This configuration generates cross-platform binaries equivalent to `just release`
+
+version: 2
+project_name: k6-mcp
+
+# Use different directory for GoReleaser output to avoid conflicts
+dist: goreleaser-dist
+
+# Build configuration
+builds:
+  # macOS builds (native compilation)
+  - id: k6-mcp-darwin
+    main: ./cmd/k6-mcp
+    binary: k6-mcp
+    goos: [darwin]
+    goarch: [amd64, arm64]
+    
+    tags: [fts5, sqlite_fts5]
+    flags: [-trimpath]
+    ldflags:
+      - -s -w
+      - -X github.com/oleiade/k6-mcp/internal/buildinfo.Version={{.Version}}
+      - -X github.com/oleiade/k6-mcp/internal/buildinfo.Commit={{.ShortCommit}}
+      - -X github.com/oleiade/k6-mcp/internal/buildinfo.Date={{.Date}}
+    
+    env:
+      - CGO_ENABLED=1
+
+  # Windows AMD64 build (cross-compilation with MinGW)
+  - id: k6-mcp-windows-amd64
+    main: ./cmd/k6-mcp
+    binary: k6-mcp
+    goos: [windows]
+    goarch: [amd64]
+    
+    tags: [fts5, sqlite_fts5]
+    flags: [-trimpath]
+    ldflags:
+      - -s -w
+      - -X github.com/oleiade/k6-mcp/internal/buildinfo.Version={{.Version}}
+      - -X github.com/oleiade/k6-mcp/internal/buildinfo.Commit={{.ShortCommit}}
+      - -X github.com/oleiade/k6-mcp/internal/buildinfo.Date={{.Date}}
+    
+    env:
+      - CGO_ENABLED=1
+      - CC=x86_64-w64-mingw32-gcc
+      - CXX=x86_64-w64-mingw32-g++
+
+# Global hooks (run once before all builds)
+before:
+  hooks:
+    - go run -tags 'fts5 sqlite_fts5' ./cmd/prepare
+
+# Archive configuration
+archives:
+  - id: k6-mcp-archive
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    files:
+      - README.md
+      - LICENSE*
+      - CHANGELOG*
+
+# Checksums
+checksum:
+  name_template: "{{ .ProjectName }}_{{ .Version }}_checksums.txt"
+  algorithm: sha256
+
+# Snapshot configuration for development builds
+snapshot:
+  version_template: "{{ .Version }}-SNAPSHOT-{{ .ShortCommit }}"
+
+# Metadata
+metadata:
+  mod_timestamp: "{{ .CommitTimestamp }}"
+
+# Git configuration
+git:
+  ignore_tags: []

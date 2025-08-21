@@ -32,11 +32,6 @@ go.work.sum
 # .vscode/
 .cursor/
 
-# Build artifacts
-./k6-mcp
-./indexer
-dist/
-
 # Ignore milvus docker volume data
 volumes/
 
@@ -45,3 +40,9 @@ volumes/
 
 # Ignore local test files
 scripts/
+
+# Build artifacts
+./k6-mcp
+./indexer
+dist/
+goreleaser-dist/
