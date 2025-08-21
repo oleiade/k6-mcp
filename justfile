@@ -3,11 +3,11 @@ commit := `git rev-parse --short HEAD`
 
 # Run the k6-mcp server
 run: prepare
-    go run -tags fts5 ./cmd/k6-mcp
+    @go run -tags 'fts5 sqlite_fts5' ./cmd/k6-mcp
 
 # Install the k6-mcp server
 install version="dev": prepare
-    go install \
+    @go install \
         -tags 'fts5 sqlite_fts5' \
         -ldflags "-s -w -X github.com/oleiade/k6-mcp/internal/buildinfo.Version={{version}} \
                   -X github.com/oleiade/k6-mcp/internal/buildinfo.Commit={{commit}} \
@@ -16,7 +16,7 @@ install version="dev": prepare
 
 # Build the k6-mcp server
 build version="dev": prepare
-    go build \
+    @go build \
         -tags 'fts5 sqlite_fts5' \
         -ldflags "-s -w -X github.com/oleiade/k6-mcp/internal/buildinfo.Version={{version}} \
                   -X github.com/oleiade/k6-mcp/internal/buildinfo.Commit={{commit}} \
@@ -25,7 +25,7 @@ build version="dev": prepare
         ./cmd/k6-mcp
 
 release version="dev": prepare
-    go build \
+    @go build \
         -tags 'fts5 sqlite_fts5' \
         -trimpath \
         -ldflags "-s -w -X github.com/oleiade/k6-mcp/internal/buildinfo.Version={{version}} \
@@ -36,7 +36,7 @@ release version="dev": prepare
 
 # Prepare the k6-mcp server for distribution.
 prepare:
-    go run -tags 'fts5 sqlite_fts5' ./cmd/prepare
+    @go run -tags 'fts5 sqlite_fts5' ./cmd/prepare
 
 # Clean the dist folder.
 clean:
