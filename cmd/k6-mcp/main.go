@@ -18,6 +18,7 @@ import (
 
 	k6mcp "github.com/oleiade/k6-mcp"
 	"github.com/oleiade/k6-mcp/internal"
+	"github.com/oleiade/k6-mcp/internal/buildinfo"
 	"github.com/oleiade/k6-mcp/internal/handlers"
 	"github.com/oleiade/k6-mcp/internal/logging"
 )
@@ -26,7 +27,9 @@ func main() {
 	logger := logging.Default()
 
 	logger.Info("Starting k6 MCP server",
-		slog.String("version", "1.2.0"),
+		slog.String("version", buildinfo.Version),
+		slog.String("commit", buildinfo.Commit),
+		slog.String("built_at", buildinfo.Date),
 		slog.Bool("resource_capabilities", true),
 	)
 
@@ -41,7 +44,7 @@ func main() {
 
 	s := server.NewMCPServer(
 		"k6",
-		"1.2.0",
+		buildinfo.Version,
 		server.WithResourceCapabilities(true, true),
 		server.WithLogging(),
 		server.WithRecovery(),

@@ -6,20 +6,20 @@ import (
 	"log/slog"
 	"os"
 	"strings"
+
+	"github.com/oleiade/k6-mcp/internal/buildinfo"
 )
 
 const (
 	// ServiceName is the service identifier for Loki labels
 	ServiceName = "k6-mcp"
-	
+
 	// ContextKey for request correlation
 	requestIDKey = "request_id"
 )
 
-var (
-	// defaultLogger is the package-level logger instance
-	defaultLogger *slog.Logger
-)
+// defaultLogger is the package-level logger instance
+var defaultLogger *slog.Logger
 
 // LogConfig holds logging configuration
 type LogConfig struct {
@@ -78,10 +78,10 @@ func newLogger(config LogConfig) *slog.Logger {
 		handler = slog.NewJSONHandler(os.Stdout, handlerOpts)
 	}
 
-	// Create logger with service-level attributes for Loki
+	// Create logger with service-level attributes
 	return slog.New(handler).With(
 		slog.String("service", ServiceName),
-		slog.String("version", "1.0.0"),
+		slog.String("version", buildinfo.Version),
 	)
 }
 
