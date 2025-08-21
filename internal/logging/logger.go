@@ -73,9 +73,9 @@ func newLogger(config LogConfig) *slog.Logger {
 	}
 
 	if config.Format == "text" {
-		handler = slog.NewTextHandler(os.Stdout, handlerOpts)
+		handler = slog.NewTextHandler(os.Stderr, handlerOpts)
 	} else {
-		handler = slog.NewJSONHandler(os.Stdout, handlerOpts)
+		handler = slog.NewJSONHandler(os.Stderr, handlerOpts)
 	}
 
 	// Create logger with service-level attributes
