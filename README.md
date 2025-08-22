@@ -1,15 +1,23 @@
-# k6-mcp
+# k6 MCP Server
 
-An **experimental** MCP (Model Context Protocol) server for k6, built in Go. It provides script validation, test execution, fast full‑text documentation search backed by an embedded SQLite FTS5 index, and intelligent script generation.
+An **experimental** MCP (Model Context Protocol) server for k6, written in Go. It offers script validation, test execution, fast full‑text documentation search (embedded SQLite FTS5), and guided script generation.
 
 ## Features
 
-- **Script Validation**: Validates k6 scripts by executing them with minimal configuration (1 VU, 1 iteration)
-- **Test Execution**: Runs k6 performance tests with configurable parameters (VUs, duration, stages, options)
-- **Documentation Search (default)**: Fast full‑text search via SQLite FTS5 over the official k6 docs (embedded index)
-- **Script Generation**: AI-powered k6 script generation with best practices and templates
-- **Best Practices Resources**: Access to comprehensive k6 scripting guidelines and patterns
-- **Security**: Comprehensive security measures including input size limits, dangerous pattern detection, and secure temporary file handling
+### Prompts
+
+- **Script Generation** with `/generate_k6_script`: Generate production‑ready k6 test scripts from plain‑English requirements. It automatically follows modern testing practices by leveraging embedded best practices, documentation, and type definitions.
+
+### Tools
+
+- **Script Validation**: `validate_k6_script` runs k6 scripts with minimal configuration (1 VU, 1 iteration) and returns actionable errors to help quickly produce correct code.
+- **Test Execution**: `run_k6_script` runs k6 performance tests locally with configurable VUs, duration, stages, and options, and, when possible, extracts insights from the results.
+- **Documentation Search (default)**: `search_k6_documentation` provides fast full‑text search over the official k6 docs (embedded SQLite FTS5 index) to help write modern, efficient k6 scripts.
+
+### Resources
+- **Best Practices Resources**: Comprehensive k6 scripting guidelines and patterns to help you write effective, idiomatic, and correct tests.
+- **Type Definitions**: Up‑to‑date k6 TypeScript type definitions to improve accuracy and editor tooling.
+
 
 ## Quick Start
 
