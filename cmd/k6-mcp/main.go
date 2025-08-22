@@ -60,7 +60,7 @@ func main() {
 	registerTypeDefinitionsResource(s)
 
 	// Register prompts
-	registerGenerateScriptPrompt(s, handlers.WithPromptMiddleware("generate_script", handlers.NewScriptGenerator()))
+	registerGenerateScriptPrompt(s, handlers.WithPromptMiddleware("generate_k6_script", handlers.NewScriptGenerator()))
 
 	logger.Info("Starting MCP server on stdio")
 	if err := server.ServeStdio(s); err != nil {
@@ -71,7 +71,7 @@ func main() {
 
 func registerValidationTool(s *server.MCPServer, h handlers.ToolHandler) {
 	validateTool := mcp.NewTool(
-		"validate_script",
+		"validate_k6_script",
 		mcp.WithDescription("Validate a k6 script by running it with minimal configuration (1 VU, 1 iteration). Returns detailed validation results with syntax errors, runtime issues, and actionable recommendations for fixing problems."),
 		mcp.WithString(
 			"script",
@@ -86,7 +86,7 @@ func registerValidationTool(s *server.MCPServer, h handlers.ToolHandler) {
 func registerDocumentationTools(s *server.MCPServer, h handlers.ToolHandler) {
 	// Register the search tool
 	searchTool := mcp.NewTool(
-		"search_documentation",
+		"search_k6_documentation",
 		mcp.WithDescription("Search up-to-date k6 documentation using SQLite FTS5 full-text search. Use proactively while authoring or validating scripts to find best practices, troubleshoot errors, discover examples/templates, and learn idiomatic k6 usage. Query semantics: space-separated terms are ANDed by default; use quotes for exact phrases; FTS5 operators (AND, OR, NEAR, parentheses) and prefix wildcards (e.g., http*) are supported. Returns structured results with title, content, and path."),
 		mcp.WithString(
 			"keywords",
@@ -105,8 +105,8 @@ func registerDocumentationTools(s *server.MCPServer, h handlers.ToolHandler) {
 func registerRunTool(s *server.MCPServer, h handlers.ToolHandler) {
 	// Register the run tool
 	runTool := mcp.NewTool(
-		"run_test",
-		mcp.WithDescription("Run a k6 performance test with configurable parameters. Returns detailed execution results including performance metrics, failure analysis, and optimization recommendations."),
+		"run_k6_script",
+		mcp.WithDescription("Run a k6 test script with configurable parameters. Returns detailed execution results including performance metrics, failure analysis, and optimization recommendations."),
 		mcp.WithString(
 			"script",
 			mcp.Required(),
