@@ -17,9 +17,9 @@ Generate a production-ready k6 script that accurately implements the user's requ
 Follow these steps in order to ensure high-quality output:
 
 ### Step 1: Research & Discovery
-- Use the "k6/search" tool to research relevant k6 features and APIs for the user's request
-- Search for specific concepts mentioned (e.g., "HTTP requests", "authentication", "thresholds")
-- Gather implementation examples and syntax patterns
+- Use the "k6/search_k6_documentation" tool to research relevant k6 features and APIs for the user's request.
+- Search for specific concepts mentioned (e.g., "HTTP requests", "authentication", "thresholds").
+- Gather implementation examples and syntax patterns.
 
 ### Step 2: Best Practices Review
 - Access the "docs://k6/best_practices" resource to review current guidelines
@@ -47,7 +47,7 @@ CRITICAL: You must save the generated script to the k6/scripts folder:
 - Include the full file path in your response so the user knows where to find it
 
 ### Step 6: Quality Validation
-- Use the "k6/validate" tool to check script syntax and basic functionality
+- Use the "k6/validate_k6_script" tool to check script syntax and basic functionality
 - Verify the script addresses all requirements from the user's request
 - Ensure adherence to the best practices you reviewed
 
@@ -60,7 +60,7 @@ Before presenting the script, confirm:
 - The script file has been saved to k6/scripts/
 
 ### Step 8: Execution Offer
-If validation succeeds, offer to run the script using the "k6/run" tool with:
+If validation succeeds, offer to run the script using the "k6/run_k6_script" tool with:
 - Suggested test parameters based on the script's purpose
 - Explanation of what the test will validate
 - Expected outcomes and metrics to monitor
