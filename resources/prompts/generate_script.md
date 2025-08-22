@@ -15,11 +15,18 @@ Generate a production-ready k6 script that accurately implements the user's requ
 
 ## IMPLEMENTATION WORKFLOW
 Follow these steps in order to ensure high-quality output:
+- Open the corresponding "types://k6/**/*.d.ts" resources for any APIs you plan to use; validate import paths, function signatures, option names, and return types.
+- Treat the type definitions as the source of truth when examples conflict; avoid deprecated or experimental APIs unless explicitly requested.
 
 ### Step 1: Research & Discovery
-- Use the "k6/search_k6_documentation" tool to research relevant k6 features and APIs for the user's request.
-- Search for specific concepts mentioned (e.g., "HTTP requests", "authentication", "thresholds").
-- Gather implementation examples and syntax patterns.
+- Use the "k6/search_k6_documentation" tool as the primary source for k6 APIs and features for this request (prefer it over general web search).
+- Issue focused queries with exact module/API names and tasks (e.g., "k6/http batch", "scenarios constant-arrival-rate", "thresholds abortOnFail").
+- Optimize queries for SQLite FTS5: space-separated terms are ANDed by default; use quotes for exact phrases; operators AND/OR/NEAR and parentheses are supported; prefix wildcards are allowed (e.g., http*).
+- Prefer 2–5 high-signal terms (module, API, action). Example queries: "k6/http batch", "thresholds OR checks http_req_duration", "scenarios NEAR/5 constant-arrival-rate".
+- If results are noisy, add exact module/API names; if sparse, relax phrases, remove operators, or split into multiple simpler queries.
+- Capture short citations (doc title and path) for relevant results and include them in the Research Summary.
+- Mirror idiomatic syntax from the docs, but rely on the types for exact shapes (e.g., `Options['thresholds']`, `import http from 'k6/http'`).
+- If a query yields few results, split it into smaller concepts and run multiple queries in parallel.
 
 ### Step 2: Best Practices Review
 - Access the "docs://k6/best_practices" resource to review current guidelines
