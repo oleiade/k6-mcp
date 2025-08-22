@@ -14,8 +14,25 @@ install version="dev": prepare
                   -X github.com/oleiade/k6-mcp/internal/buildinfo.Date={{today}}" \
         ./cmd/k6-mcp
 
+install-only version="dev":
+    @go install \
+        -tags 'fts5 sqlite_fts5' \
+        -ldflags "-s -w -X github.com/oleiade/k6-mcp/internal/buildinfo.Version={{version}} \
+                  -X github.com/oleiade/k6-mcp/internal/buildinfo.Commit={{commit}} \
+                  -X github.com/oleiade/k6-mcp/internal/buildinfo.Date={{today}}" \
+        ./cmd/k6-mcp
+
 # Build the k6-mcp server
 build version="dev": prepare
+    @go build \
+        -tags 'fts5 sqlite_fts5' \
+        -ldflags "-s -w -X github.com/oleiade/k6-mcp/internal/buildinfo.Version={{version}} \
+                  -X github.com/oleiade/k6-mcp/internal/buildinfo.Commit={{commit}} \
+                  -X github.com/oleiade/k6-mcp/internal/buildinfo.Date={{today}}" \
+        -o k6-mcp \
+        ./cmd/k6-mcp
+
+build-only version="dev":
     @go build \
         -tags 'fts5 sqlite_fts5' \
         -ldflags "-s -w -X github.com/oleiade/k6-mcp/internal/buildinfo.Version={{version}} \

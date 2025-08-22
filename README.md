@@ -13,6 +13,7 @@ An **experimental** MCP (Model Context Protocol) server for k6, written in Go. I
 - **Script Validation**: `validate_k6_script` runs k6 scripts with minimal configuration (1 VU, 1 iteration) and returns actionable errors to help quickly produce correct code.
 - **Test Execution**: `run_k6_script` runs k6 performance tests locally with configurable VUs, duration, stages, and options, and, when possible, extracts insights from the results.
 - **Documentation Search (default)**: `search_k6_documentation` provides fast full‑text search over the official k6 docs (embedded SQLite FTS5 index) to help write modern, efficient k6 scripts.
+ - **Terraform (Grafana k6 Cloud)**: `generate_k6_cloud_terraform_load_test_resource` generates a Terraform resource for Grafana Cloud k6, letting you define and provision k6 Cloud tests with the Grafana k6 Terraform provider.
 
 ### Resources
 - **Best Practices Resources**: Comprehensive k6 scripting guidelines and patterns to help you write effective, idiomatic, and correct tests.
